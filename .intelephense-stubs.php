@@ -65,6 +65,22 @@ namespace {
     }
 
     /**
+     * Adds a submenu page to the Settings main menu.
+     * 
+     * @param string $page_title The text to be displayed in the title tags.
+     * @param string $menu_title The text to be used for the menu.
+     * @param string $capability The capability required for access.
+     * @param string $menu_slug The slug name to refer to this menu.
+     * @param callable $callback The function to be called to output the page.
+     * @param int $position The position in the menu order.
+     * @return string|false The hook suffix, or false if user lacks capability.
+     */
+    function add_options_page($page_title, $menu_title, $capability, $menu_slug, $callback = '', $position = null)
+    {
+        return '';
+    }
+
+    /**
      * Modifies the database based on specified SQL statements.
      * 
      * @param string|array $queries SQL queries to run.
@@ -202,6 +218,17 @@ namespace {
     function sanitize_text_field($text)
     {
         return $text;
+    }
+
+    /**
+     * Converts a value to a non-negative integer.
+     * 
+     * @param mixed $maybeint Data to convert to a non-negative integer.
+     * @return int A non-negative integer.
+     */
+    function absint($maybeint)
+    {
+        return abs((int) $maybeint);
     }
 
     /**
