@@ -264,6 +264,14 @@ function dskapi_add_meta()
             'nonce' => wp_create_nonce('dskapi_cart_nonce')
         ]);
     }
+
+    if (is_checkout()) {
+        $css_file = DSKAPI_PLUGIN_DIR . '/css/dskapi.css';
+        $js_file = DSKAPI_PLUGIN_DIR . '/js/dskapi_checkout.js';
+
+        wp_enqueue_style('dskapi_style_checkout', DSKAPI_CSS_URI . '/dskapi.css', [], filemtime($css_file), 'all');
+        wp_enqueue_script('dskapi_js_checkout', DSKAPI_JS_URI . '/dskapi_checkout.js', [], filemtime($js_file), true);
+    }
 }
 
 /**
@@ -381,20 +389,20 @@ function dskpayment_button()
         }
 
         $dskapi_zaglavie = $paramsdskapi['dsk_zaglavie'];
-        $dskapi_custom_button_status = intval($paramsdskapi['dsk_custom_button_status']);
-        $dskapi_options = boolval($paramsdskapi['dsk_options']);
-        $dskapi_is_visible = boolval($paramsdskapi['dsk_is_visible']);
+        $dskapi_custom_button_status = (int)$paramsdskapi['dsk_custom_button_status'];
+        $dskapi_options = (bool)$paramsdskapi['dsk_options'];
+        $dskapi_is_visible = (bool)$paramsdskapi['dsk_is_visible'];
         $dskapi_button_normal = DSKAPI_LIVEURL . '/calculators/assets/img/buttons/dsk.png';
         $dskapi_button_normal_custom = DSKAPI_LIVEURL . '/calculators/assets/img/custom_buttons/' . $dskapi_cid . '.png';
         $dskapi_button_hover = DSKAPI_LIVEURL . '/calculators/assets/img/buttons/dsk-hover.png';
         $dskapi_button_hover_custom = DSKAPI_LIVEURL . '/calculators/assets/img/custom_buttons/' . $dskapi_cid . '_hover.png';
-        $dskapi_isvnoska = intval($paramsdskapi['dsk_isvnoska']);
-        $dskapi_vnoski = intval($paramsdskapi['dsk_vnoski_default']);
-        $dskapi_vnoska = floatval($paramsdskapi['dsk_vnoska']);
-        $dskapi_button_status = intval($paramsdskapi['dsk_button_status']);
-        $dskapi_maxstojnost = number_format(floatval($paramsdskapi['dsk_maxstojnost']), 2, ".", "");
-        $dskapi_vnoski_visible = intval($paramsdskapi['dsk_vnoski_visible']);
-        $dskapi_gpr = floatval($paramsdskapi['dsk_gpr']);
+        $dskapi_isvnoska = (int)$paramsdskapi['dsk_isvnoska'];
+        $dskapi_vnoski = (int)$paramsdskapi['dsk_vnoski_default'];
+        $dskapi_vnoska = number_format((float)$paramsdskapi['dsk_vnoska'], 2, ".", "");
+        $dskapi_button_status = (int)$paramsdskapi['dsk_button_status'];
+        $dskapi_maxstojnost = number_format((float)$paramsdskapi['dsk_maxstojnost'], 2, ".", "");
+        $dskapi_vnoski_visible = (int)$paramsdskapi['dsk_vnoski_visible'];
+        $dskapi_gpr = number_format((float)$paramsdskapi['dsk_gpr'], 2, ".", "");
 
         // Parse installment visibility bitmask (bit N = month N+3)
         $dskapi_vnoski_visible_arr = Dskapi_Client::parse_installment_visibility($dskapi_vnoski_visible, $dskapi_vnoski);
@@ -671,21 +679,21 @@ function dskpayment_cart_button()
     }
 
     $dskapi_zaglavie = $paramsdskapi['dsk_zaglavie'];
-    $dskapi_custom_button_status = intval($paramsdskapi['dsk_custom_button_status']);
-    $dskapi_options = boolval($paramsdskapi['dsk_options']);
-    $dskapi_is_visible = boolval($paramsdskapi['dsk_is_visible']);
+    $dskapi_custom_button_status = (int)$paramsdskapi['dsk_custom_button_status'];
+    $dskapi_options = (bool)$paramsdskapi['dsk_options'];
+    $dskapi_is_visible = (bool)$paramsdskapi['dsk_is_visible'];
     $dskapi_button_normal = DSKAPI_LIVEURL . '/calculators/assets/img/buttons/dsk.png';
     $dskapi_button_normal_custom = DSKAPI_LIVEURL . '/calculators/assets/img/custom_buttons/' . $dskapi_cid . '.png';
     $dskapi_button_hover = DSKAPI_LIVEURL . '/calculators/assets/img/buttons/dsk-hover.png';
     $dskapi_button_hover_custom = DSKAPI_LIVEURL . '/calculators/assets/img/custom_buttons/' . $dskapi_cid . '_hover.png';
-    $dskapi_isvnoska = intval($paramsdskapi['dsk_isvnoska']);
-    $dskapi_vnoski = intval($paramsdskapi['dsk_vnoski_default']);
-    $dskapi_vnoska = floatval($paramsdskapi['dsk_vnoska']);
-    $dskapi_button_status = intval($paramsdskapi['dsk_button_status']);
-    $dskapi_minstojnost = number_format(floatval($paramsdskapi['dsk_minstojnost']), 2, ".", "");
-    $dskapi_maxstojnost = number_format(floatval($paramsdskapi['dsk_maxstojnost']), 2, ".", "");
-    $dskapi_vnoski_visible = intval($paramsdskapi['dsk_vnoski_visible']);
-    $dskapi_gpr = floatval($paramsdskapi['dsk_gpr']);
+    $dskapi_isvnoska = (int)$paramsdskapi['dsk_isvnoska'];
+    $dskapi_vnoski = (int)$paramsdskapi['dsk_vnoski_default'];
+    $dskapi_vnoska = number_format((float)$paramsdskapi['dsk_vnoska'], 2, ".", "");
+    $dskapi_button_status = (int)$paramsdskapi['dsk_button_status'];
+    $dskapi_minstojnost = number_format((float)$paramsdskapi['dsk_minstojnost'], 2, ".", "");
+    $dskapi_maxstojnost = number_format((float)$paramsdskapi['dsk_maxstojnost'], 2, ".", "");
+    $dskapi_vnoski_visible = (int)$paramsdskapi['dsk_vnoski_visible'];
+    $dskapi_gpr = number_format((float)$paramsdskapi['dsk_gpr'], 2, ".", "");
 
     // Parse installment visibility bitmask
     $dskapi_vnoski_visible_arr = Dskapi_Client::parse_installment_visibility($dskapi_vnoski_visible, $dskapi_vnoski);

@@ -203,6 +203,19 @@ namespace {
     }
 
     /**
+     * Outputs the html selected attribute.
+     *
+     * @param mixed $selected One of the values to compare.
+     * @param mixed $current  The other value to compare if not just true.
+     * @param bool  $echo     Whether to echo or just return the string.
+     * @return string HTML attribute or empty string.
+     */
+    function selected($selected, $current = true, $echo = true)
+    {
+        return '';
+    }
+
+    /**
      * @param string $text
      * @return string
      */
