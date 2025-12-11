@@ -580,17 +580,18 @@ function dskapi_updateorder()
     }
 
     if (($dskapi_calculator_id != '') && ($dskapi_cid == $dskapi_calculator_id)) {
-        if (file_exists(DSKAPI_PLUGIN_DIR . '/keys/dskapiorders.json')) {
-            $orderdata = file_get_contents(DSKAPI_PLUGIN_DIR . '/keys/dskapiorders.json');
-            $dskapi_orderdata_all = json_decode($orderdata, true);
-            foreach ($dskapi_orderdata_all as $key => $value) {
-                if ($dskapi_orderdata_all[$key]['order_id'] == $dskapi_order_id) {
-                    $dskapi_orderdata_all[$key]['order_status'] = $dskapi_status;
-                }
+        if (class_exists('Dskapi_Orders')) {
+            $order_id_int = (int)$dskapi_order_id;
+            $status_int = (int)$dskapi_status;
+
+            // Create record if missing, otherwise update status
+            $result = Dskapi_Orders::exists($order_id_int)
+                ? Dskapi_Orders::update_status($order_id_int, $status_int)
+                : Dskapi_Orders::create($order_id_int, $status_int);
+
+            if ($result !== false) {
+                $json['success'] = 'success';
             }
-            $jsondata = json_encode($dskapi_orderdata_all);
-            file_put_contents(DSKAPI_PLUGIN_DIR . '/keys/dskapiorders.json', $jsondata);
-            $json['success'] = 'success';
         }
     }
 

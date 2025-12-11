@@ -41,47 +41,66 @@ function dskapi_checkout_vnoski_input_change() {
   const productIdEl = document.getElementById("dskapi_checkout_product_id");
   const liveurlEl = document.getElementById("DSKAPI_CHECKOUT_LIVEURL");
 
-  if (!priceEl || !selectEl || !cidEl || !liveurlEl) return;
+  if (!priceEl || !selectEl || !cidEl || !liveurlEl || !productIdEl) return;
 
   const dskapi_price = parseFloat(priceEl.value);
-  const dskapi_vnoski = parseInt(selectEl.value);
+  const dskapi_vnoski = parseFloat(selectEl.value);
   const dskapi_cid = cidEl.value;
-  const dskapi_product_id = productIdEl ? productIdEl.value : "0";
+  const dskapi_product_id = productIdEl.value;
   const DSKAPI_LIVEURL = liveurlEl.value;
 
-  const url =
+  const xhr = createCORSRequestCheckout(
+    "GET",
     DSKAPI_LIVEURL +
-    "/function/getproduct.php?cid=" +
+    "/function/getproductcustom.php?cid=" +
     dskapi_cid +
     "&price=" +
     dskapi_price +
     "&product_id=" +
     dskapi_product_id +
-    "&vnoski=" +
-    dskapi_vnoski;
+    "&dskapi_vnoski=" +
+    dskapi_vnoski
+  );
 
-  const xhr = createCORSRequestCheckout("GET", url);
   if (!xhr) {
     console.error("CORS not supported");
     return;
   }
 
-  xhr.onload = function () {
-    try {
-      const response = JSON.parse(xhr.responseText);
-      if (response && response.dsk_vnoska !== undefined) {
-        const vnoska = parseFloat(response.dsk_vnoska).toFixed(2);
-        const gpr = parseFloat(response.dsk_gpr).toFixed(2);
-        const obshto = (parseFloat(vnoska) * dskapi_vnoski).toFixed(2);
+  xhr.onreadystatechange = function () {
+    if (this.readyState == 4) {
+      try {
+        const response = JSON.parse(this.responseText);
+        const options = response.dsk_options;
+        const dsk_vnoska = parseFloat(response.dsk_vnoska);
+        const dsk_gpr = parseFloat(response.dsk_gpr);
+        const dsk_is_visible = response.dsk_is_visible;
 
-        if (vnoskaEl) vnoskaEl.value = vnoska;
-        if (obshtoEl) obshtoEl.value = obshto;
-        if (gprEl) gprEl.value = gpr;
+        if (dsk_is_visible) {
+          if (options) {
+            if (vnoskaEl) {
+              vnoskaEl.value = dsk_vnoska.toFixed(2);
+            }
+            if (obshtoEl) {
+              obshtoEl.value = (dsk_vnoska * dskapi_vnoski).toFixed(2);
+            }
+            if (gprEl) {
+              gprEl.value = dsk_gpr.toFixed(2);
+            }
+
+            old_vnoski_checkout = dskapi_vnoski;
+          } else {
+            alert("Избраният брой погасителни вноски е под минималния.");
+            selectEl.value = old_vnoski_checkout;
+          }
+        } else {
+          alert("Избраният брой погасителни вноски е над максималния.");
+          selectEl.value = old_vnoski_checkout;
+        }
+      } catch (e) {
+        console.error("DSKAPI Checkout: Error parsing response", e);
+        if (selectEl) selectEl.value = old_vnoski_checkout;
       }
-    } catch (e) {
-      console.error("Error parsing response:", e);
-      // Revert to old value on error
-      if (selectEl) selectEl.value = old_vnoski_checkout;
     }
   };
 

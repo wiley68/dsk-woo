@@ -165,6 +165,7 @@ class Dskapi_Payment_Gateway extends WC_Payment_Gateway
         global $woocommerce;
         $dskapi_price_original = $woocommerce->cart->total;
         $dskapi_price = $dskapi_price_original;
+        $dskapi_product_id = (int)Dskapi_Client::get_cart_product_id();
         $dskapi_cid = (string)get_option("dskapi_cid");
 
         // Get currency and EUR settings
@@ -196,7 +197,7 @@ class Dskapi_Payment_Gateway extends WC_Payment_Gateway
         }
 
         // Get product data from API
-        $paramsdskapi = Dskapi_Client::get_product($dskapi_price, 0, $dskapi_cid);
+        $paramsdskapi = Dskapi_Client::get_product($dskapi_price, $dskapi_product_id, $dskapi_cid);
 
         // Parse installment visibility
         $dskapi_vnoski_visible_arr = [];
@@ -255,7 +256,7 @@ class Dskapi_Payment_Gateway extends WC_Payment_Gateway
         <!-- Hidden fields for JS -->
         <input type="hidden" id="dskapi_checkout_price_txt_hidden" value="<?php echo esc_attr(number_format((float)$dskapi_price, 2, '.', '')); ?>" />
         <input type="hidden" id="dskapi_checkout_cid" value="<?php echo esc_attr($dskapi_cid); ?>" />
-        <input type="hidden" id="dskapi_checkout_product_id" value="0" />
+        <input type="hidden" id="dskapi_checkout_product_id" value="<?php echo esc_attr($dskapi_product_id); ?>" />
         <input type="hidden" id="DSKAPI_CHECKOUT_LIVEURL" value="<?php echo esc_attr(DSKAPI_LIVEURL); ?>" />
 
         <!-- Interest Rates Popup -->
