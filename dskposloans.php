@@ -115,6 +115,10 @@ function dskapi_plugin_bootstrap()
     // Registers a custom payment method type for WooCommerce Blocks
     add_action('woocommerce_blocks_loaded', 'dskapi_register_order_approval_payment_method_type');
 
+    /** redirect to checkout ###includes/functions.php### */
+    add_action('woocommerce_add_to_cart_redirect', 'dskapi_add_to_cart_redirect', 9999);
+    add_action('template_redirect', 'dskapi_template_redirect', 9);
+
     /** update order api */
     add_action('wp_ajax_dskapi_updateorder', 'dskapi_updateorder');
     add_action('wp_ajax_nopriv_dskapi_updateorder', 'dskapi_updateorder');

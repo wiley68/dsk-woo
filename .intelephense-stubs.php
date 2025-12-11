@@ -568,6 +568,49 @@ namespace {
     }
 
     /**
+     * Returns the checkout URL.
+     *
+     * @return string Checkout page URL.
+     */
+    function wc_get_checkout_url()
+    {
+        return '/checkout/';
+    }
+
+    /**
+     * Returns the cart URL.
+     *
+     * @return string Cart page URL.
+     */
+    function wc_get_cart_url()
+    {
+        return '/cart/';
+    }
+
+    /**
+     * Clean variables using sanitize_text_field.
+     * Arrays are cleaned recursively.
+     *
+     * @param string|array $var Data to sanitize.
+     * @return string|array Sanitized data.
+     */
+    function wc_clean($var)
+    {
+        return is_array($var) ? array_map('wc_clean', $var) : sanitize_text_field($var);
+    }
+
+    /**
+     * Remove slashes from a string or array of strings.
+     *
+     * @param string|array $value String or array of strings to unslash.
+     * @return string|array Unslashed string or array.
+     */
+    function wp_unslash($value)
+    {
+        return is_array($value) ? array_map('wp_unslash', $value) : stripslashes($value);
+    }
+
+    /**
      * @param string $string
      * @param int $flags
      * @return string
@@ -605,12 +648,47 @@ namespace {
         public $shipping;
     }
 
-    class WC_Session {}
+    class WC_Session
+    {
+        /**
+         * Get a session variable.
+         *
+         * @param string $key Session key.
+         * @param mixed $default Default value.
+         * @return mixed Session value or default.
+         */
+        public function get($key, $default = null)
+        {
+            return $default;
+        }
+
+        /**
+         * Set a session variable.
+         *
+         * @param string $key Session key.
+         * @param mixed $value Session value.
+         * @return void
+         */
+        public function set($key, $value) {}
+    }
+
     class WC_Query {}
     class WC_Checkout {}
     class WC_Countries {}
     class WC_Mailer {}
-    class WC_Payment_Gateways {}
+
+    class WC_Payment_Gateways
+    {
+        /**
+         * Get available payment gateways.
+         *
+         * @return array Array of WC_Payment_Gateway objects.
+         */
+        public function get_available_payment_gateways()
+        {
+            return [];
+        }
+    }
     class WC_Shipping {}
 
     // ============================================================================

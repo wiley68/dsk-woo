@@ -250,6 +250,32 @@ class Dskapi_Client
     // =========================================================================
 
     /**
+     * Parse installment visibility bitmask into an array.
+     * 
+     * Converts a bitmask where bit N corresponds to month (N + 3) into
+     * an array of visible months (3-48).
+     *
+     * @param int $bitmask       The visibility bitmask from API.
+     * @param int $default_month The default selected month (always visible).
+     * @return array Array with month numbers as keys and boolean visibility as values.
+     */
+    public static function parse_installment_visibility($bitmask, $default_month = 0)
+    {
+        $result = [];
+
+        // Months range from 3 to 48, bit 0 = month 3, bit 1 = month 4, etc.
+        for ($month = 3; $month <= 48; $month++) {
+            $bit_position = $month - 3;
+            $bit_value = 1 << $bit_position; // 2^bit_position
+
+            // Visible if bit is set OR if it's the default month
+            $result[$month] = (($bitmask & $bit_value) !== 0) || ($default_month === $month);
+        }
+
+        return $result;
+    }
+
+    /**
      * Check if current request is from a mobile device.
      *
      * @return bool
