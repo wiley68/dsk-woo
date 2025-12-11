@@ -62,6 +62,8 @@ define('DSKAPI_MAIL', 'home@avalonbg.com');
 
 /** includes */
 $dskapi_files = [
+    '/class-dskapi-client.php',
+    '/class-dskapi-orders.php',
     '/functions.php',
     '/admin.php'
 ];

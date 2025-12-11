@@ -232,6 +232,17 @@ namespace {
     }
 
     /**
+     * Gets file modification time.
+     * 
+     * @param string $filename Path to the file.
+     * @return int|false Unix timestamp or false on failure.
+     */
+    function filemtime($filename)
+    {
+        return time();
+    }
+
+    /**
      * @param string $text
      * @return string
      */
@@ -433,6 +444,7 @@ namespace {
     // ============================================================================
 
     define('ABSPATH', '/');
+    define('WP_DEBUG', false);
     define('WP_CONTENT_URL', '');
     define('WP_CONTENT_DIR', '');
     define('WP_PLUGIN_DIR', '');

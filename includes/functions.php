@@ -76,7 +76,7 @@ function dskapi_add_order_column_status($columns)
 {
     $dskapi_status_columns = (is_array($columns)) ? $columns : array();
     unset($dskapi_status_columns['order_actions']);
-    $dskapi_status_columns['dskapi_status_columnt'] = 'DSK Credit API Статус';
+    $dskapi_status_columns['dskapi_status_columnt'] = 'Банка ДСК Статус';
     $dskapi_status_columns['order_actions'] = $columns['order_actions'];
     return $dskapi_status_columns;
 }
@@ -88,111 +88,45 @@ function dskapi_add_order_column_status_hpos($columns)
     foreach ($columns as $key => $column) {
         $dskapi_reordered_columns[$key] = $column;
         if ($key ===  'order_status') {
-            $dskapi_reordered_columns['dskapi_status_columnt'] = 'DSK Credit API Статус';
+            $dskapi_reordered_columns['dskapi_status_columnt'] = 'Банка ДСК Статус';
         }
     }
     return $dskapi_reordered_columns;
 }
 
 /** add order column dskapi status values */
+/**
+ * Display DSK API status in orders table column (legacy post-based).
+ *
+ * @param string $column Column name.
+ * @return void
+ */
 function dskapi_add_order_column_status_values($column)
 {
     global $post;
-    $data = get_post_meta($post->ID);
-    if ($column == 'dskapi_status_columnt') {
-        $dskapi_status = '';
-        if (file_exists(DSKAPI_PLUGIN_DIR . '/keys/dskapiorders.json')) {
-            $dskapi_orderdata = file_get_contents(DSKAPI_PLUGIN_DIR . '/keys/dskapiorders.json');
-            $dskapi_orderdata_all = json_decode($dskapi_orderdata, true);
-            foreach ($dskapi_orderdata_all as $key => $value) {
-                if ($dskapi_orderdata_all[$key]['order_id'] == $post->ID) {
-                    switch ($dskapi_orderdata_all[$key]['order_status']) {
-                        case 0:
-                            $dskapi_status = "Създадена Апликация";
-                            break;
-                        case 1:
-                            $dskapi_status = "Избрана финансова схема";
-                            break;
-                        case 2:
-                            $dskapi_status = "Попълнена Апликация";
-                            break;
-                        case 3:
-                            $dskapi_status = "Изпратен Банка";
-                            break;
-                        case 4:
-                            $dskapi_status = "Неуспешен контакт с клиента";
-                            break;
-                        case 5:
-                            $dskapi_status = "Анулирана апликация";
-                            break;
-                        case 6:
-                            $dskapi_status = "Отказана апликация";
-                            break;
-                        case 7:
-                            $dskapi_status = "Подписан договор";
-                            break;
-                        case 8:
-                            $dskapi_status = "Усвоен кредит";
-                            break;
-                        default:
-                            $dskapi_status = "Създадена Апликация";
-                            break;
-                    }
-                }
-            }
-        }
-        echo ($dskapi_status);
+
+    if ($column !== 'dskapi_status_columnt') {
+        return;
     }
+
+    echo esc_html(Dskapi_Orders::get_status_label($post->ID));
 }
 
 /** add order column dskapi status values hpos */
+/**
+ * Display DSK API status in orders table column (HPOS compatible).
+ *
+ * @param string   $column Column name.
+ * @param WC_Order $order  WooCommerce order object.
+ * @return void
+ */
 function dskapi_add_order_column_status_values_hpos($column, $order)
 {
-    if ($column == 'dskapi_status_columnt') {
-        $dskapi_order_id = $order->get_id();
-        $dskapi_status = '';
-        if (file_exists(DSKAPI_PLUGIN_DIR . '/keys/dskapiorders.json')) {
-            $dskapi_orderdata = file_get_contents(DSKAPI_PLUGIN_DIR . '/keys/dskapiorders.json');
-            $dskapi_orderdata_all = json_decode($dskapi_orderdata, true);
-            foreach ($dskapi_orderdata_all as $key => $value) {
-                if ($dskapi_orderdata_all[$key]['order_id'] == $dskapi_order_id) {
-                    switch ($dskapi_orderdata_all[$key]['order_status']) {
-                        case 0:
-                            $dskapi_status = "Създадена Апликация";
-                            break;
-                        case 1:
-                            $dskapi_status = "Избрана финансова схема";
-                            break;
-                        case 2:
-                            $dskapi_status = "Попълнена Апликация";
-                            break;
-                        case 3:
-                            $dskapi_status = "Изпратен Банка";
-                            break;
-                        case 4:
-                            $dskapi_status = "Неуспешен контакт с клиента";
-                            break;
-                        case 5:
-                            $dskapi_status = "Анулирана апликация";
-                            break;
-                        case 6:
-                            $dskapi_status = "Отказана апликация";
-                            break;
-                        case 7:
-                            $dskapi_status = "Подписан договор";
-                            break;
-                        case 8:
-                            $dskapi_status = "Усвоен кредит";
-                            break;
-                        default:
-                            $dskapi_status = "Създадена поръчка";
-                            break;
-                    }
-                }
-            }
-        }
-        echo ($dskapi_status);
+    if ($column !== 'dskapi_status_columnt') {
+        return;
     }
+
+    echo esc_html(Dskapi_Orders::get_status_label($order->get_id()));
 }
 
 function dskapi_wordpress_get_params($param = null, $null_return = null)
@@ -215,66 +149,83 @@ function dskapi_wordpress_get_params($param = null, $null_return = null)
     }
 }
 
+/**
+ * Enqueue frontend styles and scripts.
+ *
+ * @return void
+ */
 function dskapi_add_meta()
 {
-    //register css-s
     if (is_front_page()) {
-        wp_enqueue_style('dskapi_style_rek', plugin_dir_url(__FILE__) . '../css/dskapi_rek.css', false, DSKAPI_VERSION, 'all');
-        wp_enqueue_script('dskapi_js_rek', plugin_dir_url(__FILE__) . '../js/dskapi_rek.js', false, DSKAPI_VERSION);
+        $css_file = DSKAPI_PLUGIN_DIR . '/css/dskapi_rek.css';
+        $js_file = DSKAPI_PLUGIN_DIR . '/js/dskapi_rek.js';
+
+        wp_enqueue_style('dskapi_style_rek', DSKAPI_CSS_URI . '/dskapi_rek.css', [], filemtime($css_file), 'all');
+        wp_enqueue_script('dskapi_js_rek', DSKAPI_JS_URI . '/dskapi_rek.js', [], filemtime($js_file), true);
     }
+
     if (is_product()) {
-        wp_enqueue_style('dskapi_style_product', plugin_dir_url(__FILE__) . '../css/dskapi_product.css', false, DSKAPI_VERSION, 'all');
-        wp_enqueue_script('dskapi_js_product', plugin_dir_url(__FILE__) . '../js/dskapi_product.js', false, DSKAPI_VERSION);
+        $css_file = DSKAPI_PLUGIN_DIR . '/css/dskapi_product.css';
+        $js_file = DSKAPI_PLUGIN_DIR . '/js/dskapi_product.js';
+
+        wp_enqueue_style('dskapi_style_product', DSKAPI_CSS_URI . '/dskapi_product.css', [], filemtime($css_file), 'all');
+        wp_enqueue_script('dskapi_js_product', DSKAPI_JS_URI . '/dskapi_product.js', [], filemtime($js_file), true);
     }
 }
 
+/**
+ * Display advertisement banner on front page.
+ *
+ * @return void
+ */
 function dskapi_reklama()
 {
-    $o = '';
-    if (is_front_page()) {
-        $dskapi_cid = (string)get_option("dskapi_cid");
-        $dskapi_reklama = (string)get_option("dskapi_reklama");
-        $dskapi_status = (string)get_option("dskapi_status");
-
-        if (($dskapi_reklama == "on") && ($dskapi_status == "on")) {
-            $dskapi_ch = curl_init();
-            curl_setopt($dskapi_ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($dskapi_ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($dskapi_ch, CURLOPT_MAXREDIRS, 2);
-            curl_setopt($dskapi_ch, CURLOPT_TIMEOUT, 6);
-            curl_setopt($dskapi_ch, CURLOPT_URL, DSKAPI_LIVEURL . '/function/getrek.php?cid=' . $dskapi_cid);
-            $paramsdskapi = json_decode(curl_exec($dskapi_ch), true);
-            curl_close($dskapi_ch);
-
-            $useragent = $_SERVER['HTTP_USER_AGENT'];
-            if (preg_match('/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i', $useragent) || preg_match('/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i', substr($useragent, 0, 4))) {
-                $dskapi_deviceis = "Yes";
-            } else {
-                $dskapi_deviceis = "No";
-            }
-            if ((!empty($paramsdskapi)) && ($paramsdskapi['dsk_status'] == 1) && ($paramsdskapi['dsk_container_status'] == 1)) {
-                if ($dskapi_deviceis == "Yes") {
-                    $o .= '<div class="dskapi_float" onclick="window.open(\'' . DSKAPI_LIVEURL . '/procedure.php\', \'_blank\');">';
-                } else {
-                    $o .= '<div class="dskapi_float" onclick="DskapiChangeContainer();">';
-                }
-                $o .= '<img src="' . DSKAPI_LIVEURL . '/dist/img/dsk_logo.png" class="dskapi-my-float">';
-                $o .= '</div>';
-                $o .= '<div class="dskapi-label-container">';
-                $o .= '<div class="dskapi-label-text">';
-                $o .= '<div class="dskapi-label-text-mask">';
-                $o .= '<img src="' . $paramsdskapi['dsk_picture'] . '" class="dskapi_header">';
-                $o .= '<p class="dskapi_txt1">' . $paramsdskapi['dsk_container_txt1'] . '</p>';
-                $o .= '<p class="dskapi_txt2">' . $paramsdskapi['dsk_container_txt2'] . '</p>';
-                $o .= '<p class="dskapi-label-text-a"><a href="' . $paramsdskapi['dsk_logo_url'] . '" target="_blank" alt="За повече информация">За повече информация</a></p>';
-                $o .= '</div>';
-                $o .= '</div>';
-                $o .= '</div>';
-            }
-        }
+    if (!is_front_page()) {
+        return;
     }
+
+    $dskapi_reklama = get_option('dskapi_reklama');
+
+    if ($dskapi_reklama !== 'on' || !Dskapi_Client::is_enabled()) {
+        return;
+    }
+
+    $paramsdskapi = Dskapi_Client::get_reklama();
+
+    if (empty($paramsdskapi)) {
+        return;
+    }
+
+    $o = '';
+
+    if (($paramsdskapi['dsk_status'] ?? 0) != 1 || ($paramsdskapi['dsk_container_status'] ?? 0) != 1) {
+        return;
+    }
+
+    $is_mobile = Dskapi_Client::is_mobile();
+
+    if ($is_mobile) {
+        $o .= '<div class="dskapi_float" onclick="window.open(\'' . esc_url(DSKAPI_LIVEURL . '/procedure.php') . '\', \'_blank\');">';
+    } else {
+        $o .= '<div class="dskapi_float" onclick="DskapiChangeContainer();">';
+    }
+
+    $o .= '<img src="' . esc_url(DSKAPI_LIVEURL . '/dist/img/dsk_logo.png') . '" class="dskapi-my-float">';
+    $o .= '</div>';
+    $o .= '<div class="dskapi-label-container">';
+    $o .= '<div class="dskapi-label-text">';
+    $o .= '<div class="dskapi-label-text-mask">';
+    $o .= '<img src="' . esc_url($paramsdskapi['dsk_picture'] ?? '') . '" class="dskapi_header">';
+    $o .= '<p class="dskapi_txt1">' . esc_html($paramsdskapi['dsk_container_txt1'] ?? '') . '</p>';
+    $o .= '<p class="dskapi_txt2">' . esc_html($paramsdskapi['dsk_container_txt2'] ?? '') . '</p>';
+    $o .= '<p class="dskapi-label-text-a"><a href="' . esc_url($paramsdskapi['dsk_logo_url'] ?? '#') . '" target="_blank">За повече информация</a></p>';
+    $o .= '</div>';
+    $o .= '</div>';
+    $o .= '</div>';
+
     echo $o;
 }
+
 
 /** vizualize credit button */
 function dskpayment_button()
