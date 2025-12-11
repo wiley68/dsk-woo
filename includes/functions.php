@@ -109,6 +109,47 @@ function dskapi_template_redirect()
     }
 }
 
+/**
+ * Add DSK cart button to WooCommerce cart fragments.
+ * This ensures the button is updated when cart is refreshed via AJAX.
+ *
+ * @param array $fragments Cart fragments to update.
+ * @return array Updated fragments.
+ */
+function dskapi_cart_fragments($fragments)
+{
+    // Only add fragment on cart page
+    if (!is_cart()) {
+        return $fragments;
+    }
+
+    ob_start();
+    dskpayment_cart_button();
+    $dskapi_cart_button_html = ob_get_clean();
+
+    // Only add fragment if we have content
+    if (!empty(trim($dskapi_cart_button_html))) {
+        $fragments['#dskapi-cart-button-container'] = $dskapi_cart_button_html;
+    }
+
+    return $fragments;
+}
+
+/**
+ * AJAX handler to refresh DSK cart button.
+ * Called after cart is updated to get fresh button HTML.
+ *
+ * @return void
+ */
+function dskapi_refresh_cart_button()
+{
+    ob_start();
+    dskpayment_cart_button();
+    $html = ob_get_clean();
+
+    wp_send_json_success(['html' => $html]);
+}
+
 /** add order column dskapi status */
 function dskapi_add_order_column_status($columns)
 {
@@ -203,11 +244,25 @@ function dskapi_add_meta()
     }
 
     if (is_product()) {
-        $css_file = DSKAPI_PLUGIN_DIR . '/css/dskapi_product.css';
+        $css_file = DSKAPI_PLUGIN_DIR . '/css/dskapi.css';
         $js_file = DSKAPI_PLUGIN_DIR . '/js/dskapi_product.js';
 
-        wp_enqueue_style('dskapi_style_product', DSKAPI_CSS_URI . '/dskapi_product.css', [], filemtime($css_file), 'all');
+        wp_enqueue_style('dskapi_style_product', DSKAPI_CSS_URI . '/dskapi.css', [], filemtime($css_file), 'all');
         wp_enqueue_script('dskapi_js_product', DSKAPI_JS_URI . '/dskapi_product.js', [], filemtime($js_file), true);
+    }
+
+    if (is_cart()) {
+        $css_file = DSKAPI_PLUGIN_DIR . '/css/dskapi.css';
+        $js_file = DSKAPI_PLUGIN_DIR . '/js/dskapi_cart.js';
+
+        wp_enqueue_style('dskapi_style_cart', DSKAPI_CSS_URI . '/dskapi.css', [], filemtime($css_file), 'all');
+        wp_enqueue_script('dskapi_js_cart', DSKAPI_JS_URI . '/dskapi_cart.js', ['jquery'], filemtime($js_file), true);
+
+        // Pass AJAX URL to JavaScript
+        wp_localize_script('dskapi_js_cart', 'dskapi_cart_vars', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('dskapi_cart_nonce')
+        ]);
     }
 }
 
@@ -486,7 +541,7 @@ function dskpayment_button()
                     </div>
                 </div>
             </div>
-<?php
+        <?php
         }
     }
 }
@@ -537,4 +592,246 @@ function dskapi_updateorder()
 
     echo (json_encode($json));
     die();
+}
+
+/**
+ * Display DSK credit button on cart page.
+ * Shows after cart totals with functionality to proceed to checkout with DSK payment.
+ * Wrapper div is always output for WooCommerce fragments compatibility.
+ *
+ * @return void
+ */
+function dskpayment_cart_button()
+{
+    // Always output wrapper for WooCommerce fragments
+    echo '<div id="dskapi-cart-button-container">';
+
+    $dskapi_status = (string)get_option("dskapi_status");
+    if ($dskapi_status != "on") {
+        echo '</div><!-- #dskapi-cart-button-container -->';
+        return;
+    }
+
+    $dskapi_cid = (string)get_option("dskapi_cid");
+    $dskapi_gap = (int)get_option("dskapi_gap", 0);
+
+    // Get cart total and product ID
+    $dskapi_price = Dskapi_Client::get_cart_total();
+    $dskapi_product_id = Dskapi_Client::get_cart_product_id();
+
+    if ($dskapi_price <= 0) {
+        echo '</div><!-- #dskapi-cart-button-container -->';
+        return;
+    }
+
+    // Determine currency settings
+    $dskapi_currency_code = get_woocommerce_currency();
+    if ($dskapi_currency_code != 'EUR' && $dskapi_currency_code != 'BGN') {
+        echo '</div><!-- #dskapi-cart-button-container -->';
+        return;
+    }
+
+    // Get EUR settings from API
+    $paramsdskapieur = Dskapi_Client::get_eur($dskapi_cid);
+    if (empty($paramsdskapieur)) {
+        echo '</div><!-- #dskapi-cart-button-container -->';
+        return;
+    }
+
+    $dskapi_eur = (int)$paramsdskapieur['dsk_eur'];
+    $dskapi_sign = 'лв.';
+    switch ($dskapi_eur) {
+        case 0:
+            // No conversion - use current currency
+            if ($dskapi_currency_code == 'EUR') {
+                $dskapi_sign = 'евро';
+            }
+            break;
+        case 1:
+            // Convert EUR to BGN
+            if ($dskapi_currency_code == "EUR") {
+                $dskapi_price = number_format($dskapi_price * 1.95583, 2, ".", "");
+            }
+            $dskapi_sign = 'лв.';
+            break;
+        case 2:
+            // Convert BGN to EUR
+            if ($dskapi_currency_code == "BGN") {
+                $dskapi_price = number_format($dskapi_price / 1.95583, 2, ".", "");
+            }
+            $dskapi_sign = 'евро';
+            break;
+    }
+
+    // Get product data from API
+    $paramsdskapi = Dskapi_Client::get_product($dskapi_price, $dskapi_product_id, $dskapi_cid);
+
+    if (empty($paramsdskapi)) {
+        return;
+    }
+
+    $dskapi_zaglavie = $paramsdskapi['dsk_zaglavie'];
+    $dskapi_custom_button_status = intval($paramsdskapi['dsk_custom_button_status']);
+    $dskapi_options = boolval($paramsdskapi['dsk_options']);
+    $dskapi_is_visible = boolval($paramsdskapi['dsk_is_visible']);
+    $dskapi_button_normal = DSKAPI_LIVEURL . '/calculators/assets/img/buttons/dsk.png';
+    $dskapi_button_normal_custom = DSKAPI_LIVEURL . '/calculators/assets/img/custom_buttons/' . $dskapi_cid . '.png';
+    $dskapi_button_hover = DSKAPI_LIVEURL . '/calculators/assets/img/buttons/dsk-hover.png';
+    $dskapi_button_hover_custom = DSKAPI_LIVEURL . '/calculators/assets/img/custom_buttons/' . $dskapi_cid . '_hover.png';
+    $dskapi_isvnoska = intval($paramsdskapi['dsk_isvnoska']);
+    $dskapi_vnoski = intval($paramsdskapi['dsk_vnoski_default']);
+    $dskapi_vnoska = floatval($paramsdskapi['dsk_vnoska']);
+    $dskapi_button_status = intval($paramsdskapi['dsk_button_status']);
+    $dskapi_minstojnost = number_format(floatval($paramsdskapi['dsk_minstojnost']), 2, ".", "");
+    $dskapi_maxstojnost = number_format(floatval($paramsdskapi['dsk_maxstojnost']), 2, ".", "");
+    $dskapi_vnoski_visible = intval($paramsdskapi['dsk_vnoski_visible']);
+    $dskapi_gpr = floatval($paramsdskapi['dsk_gpr']);
+
+    // Parse installment visibility bitmask
+    $dskapi_vnoski_visible_arr = Dskapi_Client::parse_installment_visibility($dskapi_vnoski_visible, $dskapi_vnoski);
+
+    // Determine mobile/desktop styles
+    $dskapi_is_mobile = Dskapi_Client::is_mobile();
+    if ($dskapi_is_mobile) {
+        $dskapi_PopUp_Detailed_v1 = "dskapim_PopUp_Detailed_v1";
+        $dskapi_Mask = "dskapim_Mask";
+        $dskapi_picture = DSKAPI_LIVEURL . '/calculators/assets/img/dskm' . $paramsdskapi['dsk_reklama'] . '.png';
+        $dskapi_product_name = "dskapim_product_name";
+        $dskapi_body_panel_txt3 = "dskapim_body_panel_txt3";
+        $dskapi_body_panel_txt4 = "dskapim_body_panel_txt4";
+        $dskapi_body_panel_txt3_left = "dskapim_body_panel_txt3_left";
+        $dskapi_body_panel_txt3_right = "dskapim_body_panel_txt3_right";
+        $dskapi_sumi_panel = "dskapim_sumi_panel";
+        $dskapi_kredit_panel = "dskapim_kredit_panel";
+        $dskapi_body_panel_footer = "dskapim_body_panel_footer";
+        $dskapi_body_panel_left = "dskapim_body_panel_left";
+    } else {
+        $dskapi_PopUp_Detailed_v1 = "dskapi_PopUp_Detailed_v1";
+        $dskapi_Mask = "dskapi_Mask";
+        $dskapi_picture = DSKAPI_LIVEURL . '/calculators/assets/img/dsk' . $paramsdskapi['dsk_reklama'] . '.png';
+        $dskapi_product_name = "dskapi_product_name";
+        $dskapi_body_panel_txt3 = "dskapi_body_panel_txt3";
+        $dskapi_body_panel_txt4 = "dskapi_body_panel_txt4";
+        $dskapi_body_panel_txt3_left = "dskapi_body_panel_txt3_left";
+        $dskapi_body_panel_txt3_right = "dskapi_body_panel_txt3_right";
+        $dskapi_sumi_panel = "dskapi_sumi_panel";
+        $dskapi_kredit_panel = "dskapi_kredit_panel";
+        $dskapi_body_panel_footer = "dskapi_body_panel_footer";
+        $dskapi_body_panel_left = "dskapi_body_panel_left";
+    }
+
+    if (($dskapi_options) && $dskapi_is_visible && ($paramsdskapi['dsk_status'] == 1) && ($dskapi_button_status != 0)) {
+        ?>
+        <div class="dskapi-cart-button-inner" style="margin-top:<?php echo $dskapi_gap; ?>px;">
+            <table class="dskapi_table">
+                <tr>
+                    <td class="dskapi_button_table">
+                        <div class="dskapi_button_div_txt">
+                            <?php echo $dskapi_zaglavie; ?>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <table class="dskapi_table_img">
+                <tr>
+                    <td class="dskapi_button_table">
+                        <?php if ($dskapi_custom_button_status == 1) { ?>
+                            <img id="btn_dskapi_cart" class="dskapi_btn_click dskapi_logo" src="<?php echo $dskapi_button_normal_custom; ?>" alt="Кредитен калкулатор DSK Credit" onmouseover="this.src='<?php echo $dskapi_button_hover_custom; ?>'" onmouseout="this.src='<?php echo $dskapi_button_normal_custom; ?>'" />
+                        <?php } else { ?>
+                            <img id="btn_dskapi_cart" class="dskapi_btn_click dskapi_logo" src="<?php echo $dskapi_button_normal; ?>" alt="Кредитен калкулатор DSK Credit" onmouseover="this.src='<?php echo $dskapi_button_hover; ?>'" onmouseout="this.src='<?php echo $dskapi_button_normal; ?>'" />
+                        <?php } ?>
+                    </td>
+                </tr>
+                <?php if ($dskapi_isvnoska == 1) { ?>
+                    <tr>
+                        <td class="dskapi_button_table">
+                            <p><span id="dskapi_cart_vnoski_txt"><?php echo $dskapi_vnoski; ?></span> x <span id="dskapi_cart_vnoska_txt"><?php echo number_format($dskapi_vnoska, 2, '.', ''); ?></span> <span id="dskapi_cart_sign_txt"><?php echo $dskapi_sign; ?></span></p>
+                        </td>
+                    </tr>
+                <?php } ?>
+            </table>
+        </div><!-- .dskapi-cart-button-inner -->
+        <input type="hidden" id="dskapi_cart_price" value="<?php echo number_format($dskapi_price, 2, '.', ''); ?>" />
+        <input type="hidden" id="dskapi_cart_cid" value="<?php echo $dskapi_cid; ?>" />
+        <input type="hidden" id="dskapi_cart_product_id" value="<?php echo $dskapi_product_id; ?>" />
+        <input type="hidden" id="DSKAPI_CART_LIVEURL" value="<?php echo DSKAPI_LIVEURL; ?>" />
+        <input type="hidden" id="dskapi_cart_button_status" value="<?php echo $dskapi_button_status; ?>" />
+        <input type="hidden" id="dskapi_cart_maxstojnost" value="<?php echo $dskapi_maxstojnost; ?>" />
+        <input type="hidden" id="dskapi_cart_checkout_url" value="<?php echo esc_url(wc_get_checkout_url()); ?>" />
+        <input type="hidden" id="dskapi_cart_payment_method" value="dskapipayment" />
+        <div id="dskapi-cart-popup-container" class="modalpayment_dskapi">
+            <div class="modalpayment-content_dskapi">
+                <div id="dskapi_body">
+                    <div class="<?php echo $dskapi_PopUp_Detailed_v1; ?>">
+                        <div class="<?php echo $dskapi_Mask; ?>">
+                            <img src="<?php echo $dskapi_picture; ?>" class="dskapi_header">
+                            <p class="<?php echo $dskapi_product_name; ?>">Купи на изплащане със стоков кредит от Банка ДСК</p>
+                            <div class="<?php echo $dskapi_body_panel_txt3; ?>">
+                                <div class="<?php echo $dskapi_body_panel_txt3_left; ?>">
+                                    <p>
+                                        • Улеснена процедура за електронно подписване<br />
+                                        • Атрактивни условия по кредита<br />
+                                        • Параметри изцяло по Ваш избор<br />
+                                        • Одобрение до няколко минути изцяло онлайн
+                                    </p>
+                                </div>
+                                <div class="<?php echo $dskapi_body_panel_txt3_right; ?>">
+                                    <select id="dskapi_cart_pogasitelni_vnoski_input" class="dskapi_txt_right" onchange="dskapi_cart_pogasitelni_vnoski_input_change();" onfocus="dskapi_cart_pogasitelni_vnoski_input_focus(this.value);">
+                                        <?php for ($i = 3; $i <= 48; $i++) { ?>
+                                            <?php if ($dskapi_vnoski_visible_arr[$i]) { ?>
+                                                <option value="<?php echo $i; ?>" <?php if ($dskapi_vnoski == $i) {
+                                                                                        echo 'selected';
+                                                                                    } ?>><?php echo $i; ?> месеца</option>
+                                            <?php } ?>
+                                        <?php } ?>
+                                    </select>
+                                    <div class="<?php echo $dskapi_sumi_panel; ?>">
+                                        <div class="<?php echo $dskapi_kredit_panel; ?>">
+                                            <div class="dskapi_sumi_txt">Размер на кредита /<?php echo $dskapi_sign; ?>/</div>
+                                            <div>
+                                                <input class="dskapi_mesecna_price" type="text" id="dskapi_cart_price_txt" readonly="readonly" value="<?php echo number_format($dskapi_price, 2, ".", ""); ?>" />
+                                            </div>
+                                        </div>
+                                        <div class="<?php echo $dskapi_kredit_panel; ?>">
+                                            <div class="dskapi_sumi_txt">Месечна вноска /<?php echo $dskapi_sign; ?>/</div>
+                                            <div>
+                                                <input class="dskapi_mesecna_price" type="text" id="dskapi_cart_vnoska" readonly="readonly" value="<?php echo number_format($dskapi_vnoska, 2, ".", ""); ?>" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="<?php echo $dskapi_sumi_panel; ?>">
+                                        <div class="<?php echo $dskapi_kredit_panel; ?>">
+                                            <div class="dskapi_sumi_txt">Обща дължима сума /<?php echo $dskapi_sign; ?>/</div>
+                                            <div>
+                                                <input class="dskapi_mesecna_price" type="text" id="dskapi_cart_obshtozaplashtane" readonly="readonly" value="<?php echo number_format($dskapi_vnoska * $dskapi_vnoski, 2, ".", ""); ?>" />
+                                            </div>
+                                        </div>
+                                        <div class="<?php echo $dskapi_kredit_panel; ?>">
+                                            <div class="dskapi_sumi_txt">ГПР /%/</div>
+                                            <div>
+                                                <input class="dskapi_mesecna_price" type="text" id="dskapi_cart_gpr" readonly="readonly" value="<?php echo number_format($dskapi_gpr, 2, ".", ""); ?>" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="<?php echo $dskapi_body_panel_txt4; ?>">
+                                Изчисленията са направени при допускането за първа падежна дата след 30 дни и са с насочваща цел. Избери най-подходящата месечна вноска.
+                            </div>
+                            <div class="<?php echo $dskapi_body_panel_footer; ?>">
+                                <div class="dskapi_btn" id="dskapi_cart_buy_credit">Купи на изплащане</div>
+                                <div class="dskapi_btn_cancel" id="dskapi_cart_back_credit">Откажи</div>
+                                <div class="<?php echo $dskapi_body_panel_left; ?>">
+                                    <div class="dskapi_txt_footer">Ver. <?php echo DSKAPI_VERSION; ?></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+<?php
+    }
+    // Close the wrapper div for WooCommerce fragments
+    echo '</div><!-- #dskapi-cart-button-container -->';
 }

@@ -107,6 +107,11 @@ function dskapi_plugin_bootstrap()
     add_action('init', 'dskapi_do_output_buffer');
     /** vizualize credit button ###includes/functions.php### */
     add_action('woocommerce_after_add_to_cart_button', 'dskpayment_button');
+    /** vizualize credit button on cart page ###includes/functions.php### */
+    add_action('woocommerce_after_cart_totals', 'dskpayment_cart_button');
+    /** update cart button via AJAX fragments ###includes/functions.php### */
+    add_filter('woocommerce_add_to_cart_fragments', 'dskapi_cart_fragments');
+    add_filter('woocommerce_update_order_review_fragments', 'dskapi_cart_fragments');
 
     /** reklama ###includes/functions.php### */
     add_action('wp_enqueue_scripts', 'dskapi_add_meta');
@@ -122,6 +127,10 @@ function dskapi_plugin_bootstrap()
     /** update order api */
     add_action('wp_ajax_dskapi_updateorder', 'dskapi_updateorder');
     add_action('wp_ajax_nopriv_dskapi_updateorder', 'dskapi_updateorder');
+
+    /** refresh cart button via AJAX ###includes/functions.php### */
+    add_action('wp_ajax_dskapi_refresh_cart_button', 'dskapi_refresh_cart_button');
+    add_action('wp_ajax_nopriv_dskapi_refresh_cart_button', 'dskapi_refresh_cart_button');
 }
 
 /**

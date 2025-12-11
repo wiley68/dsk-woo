@@ -294,4 +294,52 @@ class Dskapi_Client
 
         return preg_match($mobile_regex, $useragent) || preg_match($mobile_regex_short, substr($useragent, 0, 4));
     }
+
+    /**
+     * Get product ID from cart items.
+     * Returns product ID if cart contains only one unique product, otherwise returns 0.
+     *
+     * @return int Product ID or 0 if multiple products or empty cart.
+     */
+    public static function get_cart_product_id()
+    {
+        if (!function_exists('WC') || !WC()->cart) {
+            return 0;
+        }
+
+        $cart_items = WC()->cart->get_cart();
+        if (empty($cart_items)) {
+            return 0;
+        }
+
+        $product_ids = array();
+        foreach ($cart_items as $cart_item) {
+            if (!isset($cart_item['product_id'])) {
+                continue;
+            }
+            $product_ids[(int)$cart_item['product_id']] = true;
+        }
+
+        // Return product ID only if there's exactly one unique product
+        if (count($product_ids) === 1) {
+            reset($product_ids);
+            return (int)key($product_ids);
+        }
+
+        return 0;
+    }
+
+    /**
+     * Get cart total price.
+     *
+     * @return float Cart total or 0.
+     */
+    public static function get_cart_total()
+    {
+        if (!function_exists('WC') || !WC()->cart) {
+            return 0;
+        }
+
+        return (float)WC()->cart->get_total('edit');
+    }
 }

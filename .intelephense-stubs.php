@@ -232,6 +232,59 @@ namespace {
     }
 
     /**
+     * Retrieves the URL to the admin area.
+     * 
+     * @param string $path Optional path relative to the admin URL.
+     * @param string $scheme The scheme to use. Default 'admin'.
+     * @return string Admin URL.
+     */
+    function admin_url($path = '', $scheme = 'admin')
+    {
+        return '/wp-admin/' . ltrim($path, '/');
+    }
+
+    /**
+     * Creates a cryptographic token tied to a specific action.
+     * 
+     * @param string|int $action The action name.
+     * @return string The nonce token.
+     */
+    function wp_create_nonce($action = -1)
+    {
+        return '';
+    }
+
+    /**
+     * Verifies that correct nonce was used.
+     * 
+     * @param string $nonce Nonce to verify.
+     * @param string|int $action Action name.
+     * @return false|int False if invalid, 1 if valid and generated 0-12 hours ago, 2 if generated 12-24 hours ago.
+     */
+    function wp_verify_nonce($nonce, $action = -1)
+    {
+        return 1;
+    }
+
+    /**
+     * Send a JSON response with success status.
+     * 
+     * @param mixed $data Data to encode as JSON.
+     * @param int $status_code HTTP status code. Default 200.
+     * @return void
+     */
+    function wp_send_json_success($data = null, $status_code = 200) {}
+
+    /**
+     * Send a JSON response with error status.
+     * 
+     * @param mixed $data Data to encode as JSON.
+     * @param int $status_code HTTP status code. Default 200.
+     * @return void
+     */
+    function wp_send_json_error($data = null, $status_code = 200) {}
+
+    /**
      * Gets file modification time.
      * 
      * @param string $filename Path to the file.
@@ -319,6 +372,19 @@ namespace {
      * @return void
      */
     function wp_enqueue_style($handle, $src = '', $deps = array(), $ver = false, $media = 'all') {}
+
+    /**
+     * Localize a script.
+     * 
+     * @param string $handle Script handle.
+     * @param string $object_name Name for the JavaScript object.
+     * @param array $l10n Data to pass to the script.
+     * @return bool True if data was added, false if not.
+     */
+    function wp_localize_script($handle, $object_name, $l10n)
+    {
+        return true;
+    }
 
     /**
      * @param string $handle
