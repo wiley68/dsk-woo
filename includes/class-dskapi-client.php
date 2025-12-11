@@ -143,7 +143,7 @@ class Dskapi_Client
         curl_close($ch);
 
         // Log errors if WP_DEBUG is enabled
-        if ($error && defined('WP_DEBUG') && WP_DEBUG) {
+        if ($error && WP_DEBUG) {
             error_log('Dskapi_Client Error: ' . $error . ' | URL: ' . $url);
         }
 

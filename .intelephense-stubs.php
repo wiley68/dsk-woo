@@ -510,7 +510,8 @@ namespace {
     // ============================================================================
 
     define('ABSPATH', '/');
-    define('WP_DEBUG', false);
+    /** @var bool WordPress debug mode - value varies by environment */
+    const WP_DEBUG = true;
     define('WP_CONTENT_URL', '');
     define('WP_CONTENT_DIR', '');
     define('WP_PLUGIN_DIR', '');
