@@ -118,7 +118,7 @@ final class Dskapi_Payment_Gateway_Blocks extends AbstractPaymentMethodType
     public function dskapi_get_payment_fields_html()
     {
         ob_start();
-        $this->gateway->payment_fields(true);
+        $this->gateway->payment_fields();
         return ob_get_clean();
     }
 }
