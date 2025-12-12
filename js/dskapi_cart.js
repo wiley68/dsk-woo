@@ -1,17 +1,29 @@
 /**
- * DSK Credit API - Cart Page JavaScript
- * Handles credit button functionality on cart page.
- * Uses event delegation to handle dynamically loaded content.
+ * DSK API Payment Gateway - Cart Page JavaScript
+ *
+ * Handles credit button functionality on the WooCommerce cart page.
+ * Uses event delegation to handle dynamically loaded content after AJAX updates.
+ *
+ * @package DSK_POS_Loans
+ * @since   1.2.0
  */
 
+/**
+ * Stores the previous installment count for validation/rollback.
+ *
+ * @type {number|undefined}
+ */
 let old_vnoski_cart;
 
 /**
- * Create CORS-compatible XMLHttpRequest.
+ * Creates a CORS-compatible XMLHttpRequest object.
+ *
+ * Handles cross-browser compatibility for CORS requests,
+ * including fallback to XDomainRequest for older IE versions.
  *
  * @param {string} method - HTTP method (GET, POST).
  * @param {string} url - Request URL.
- * @returns {XMLHttpRequest|null} XMLHttpRequest object or null.
+ * @returns {XMLHttpRequest|XDomainRequest|null} Request object or null if CORS not supported.
  */
 function createCORSRequestCart(method, url) {
   var xhr = new XMLHttpRequest();
@@ -27,17 +39,33 @@ function createCORSRequestCart(method, url) {
 }
 
 /**
- * Store previous installment value for validation.
+ * Stores the previous installment value for validation purposes.
  *
- * @param {number} _old_vnoski - Previous installment count.
+ * Called on focus of the installment select to store current value
+ * before user changes it. Used to rollback if API validation fails.
+ *
+ * @param {number} _old_vnoski - Previous installment count value.
+ * @returns {void}
  */
 function dskapi_cart_pogasitelni_vnoski_input_focus(_old_vnoski) {
   old_vnoski_cart = _old_vnoski;
 }
 
 /**
- * Handle installment count change - fetch new payment data from API.
- * Updates installment amount, total payment, GPR and button text displays.
+ * Handles installment count change event.
+ *
+ * Fetches new payment data from DSK Bank API when user changes
+ * the installment count. Updates all display fields with new values:
+ * - Monthly installment amount
+ * - Total payment amount
+ * - Annual Percentage Rate (GPR)
+ * - Button text displays
+ *
+ * Shows error alerts and reverts to previous value if:
+ * - Selected installments below minimum
+ * - Selected installments above maximum
+ *
+ * @returns {void}
  */
 function dskapi_cart_pogasitelni_vnoski_input_change() {
   const vnoskiInput = document.getElementById(
@@ -48,6 +76,7 @@ function dskapi_cart_pogasitelni_vnoski_input_change() {
   const liveUrlInput = document.getElementById("DSKAPI_CART_LIVEURL");
   const productIdInput = document.getElementById("dskapi_cart_product_id");
 
+  // Validate all required elements exist
   if (
     !vnoskiInput ||
     !priceTxt ||
@@ -64,6 +93,7 @@ function dskapi_cart_pogasitelni_vnoski_input_change() {
   const DSKAPI_LIVEURL = liveUrlInput.value;
   const dskapi_product_id = productIdInput.value;
 
+  // Build API request URL
   var xmlhttpro = createCORSRequestCart(
     "GET",
     DSKAPI_LIVEURL +
@@ -77,6 +107,10 @@ function dskapi_cart_pogasitelni_vnoski_input_change() {
       dskapi_vnoski
   );
 
+  /**
+   * Handle API response.
+   * Updates UI elements or shows validation error.
+   */
   xmlhttpro.onreadystatechange = function () {
     if (this.readyState == 4) {
       try {
@@ -88,7 +122,7 @@ function dskapi_cart_pogasitelni_vnoski_input_change() {
 
         if (dsk_is_visible) {
           if (options) {
-            // Update popup fields
+            // Update popup input fields
             const dskapi_vnoska_input =
               document.getElementById("dskapi_cart_vnoska");
             const dskapi_gpr_input = document.getElementById("dskapi_cart_gpr");
@@ -123,12 +157,15 @@ function dskapi_cart_pogasitelni_vnoski_input_change() {
               dskapi_vnoska_txt.textContent = dsk_vnoska.toFixed(2);
             }
 
+            // Store new value as current for future rollbacks
             old_vnoski_cart = dskapi_vnoski;
           } else {
+            // Installments below minimum - show error and revert
             alert("Избраният брой погасителни вноски е под минималния.");
             vnoskiInput.value = old_vnoski_cart;
           }
         } else {
+          // Installments above maximum - show error and revert
           alert("Избраният брой погасителни вноски е над максималния.");
           vnoskiInput.value = old_vnoski_cart;
         }
@@ -141,20 +178,27 @@ function dskapi_cart_pogasitelni_vnoski_input_change() {
 }
 
 /**
- * Redirect directly to checkout with DSK payment method preselected.
- * No need to add to cart - we're already on cart page.
+ * Redirects to checkout with DSK payment method preselected.
+ *
+ * Unlike the product page version, this does not add anything to cart
+ * since the user is already on the cart page with items in cart.
+ * Simply closes popup and redirects with payment_method parameter.
+ *
+ * @returns {void}
  */
 function dskapiCartGoToCheckout() {
+  // Close popup if open
   const popup = document.getElementById("dskapi-cart-popup-container");
   if (popup) popup.style.display = "none";
 
+  // Get checkout URL and payment method from hidden inputs
   const checkoutUrl =
     document.getElementById("dskapi_cart_checkout_url")?.value || "/checkout/";
   const paymentMethod =
     document.getElementById("dskapi_cart_payment_method")?.value ||
     "dskapipayment";
 
-  // Redirect directly to checkout with payment method
+  // Build redirect URL with payment method parameter
   const separator = checkoutUrl.includes("?") ? "&" : "?";
   window.location.href =
     checkoutUrl +
@@ -164,38 +208,49 @@ function dskapiCartGoToCheckout() {
 }
 
 /**
- * Handle main DSK cart button click.
- * Shows popup or redirects to checkout based on button status.
+ * Handles the main DSK cart button click event.
+ *
+ * Behavior depends on button status setting:
+ * - Status 1: Direct checkout mode - skips popup and redirects immediately
+ * - Status 0: Shows popup with credit calculation options
+ *
+ * Also validates cart total against maximum allowed credit amount.
+ *
+ * @returns {void}
  */
 function dskapiCartButtonClick() {
   const dskapi_button_status = parseInt(
     document.getElementById("dskapi_cart_button_status")?.value || "0"
   );
 
+  // Direct checkout mode - skip popup entirely
   if (dskapi_button_status == 1) {
-    // Direct to checkout mode - skip popup
     dskapiCartGoToCheckout();
     return;
   }
 
-  // Get current price
+  // Get current cart price
   const dskapi_price = parseFloat(
     document.getElementById("dskapi_cart_price")?.value || "0"
   );
 
-  // Check max price limit
+  // Get maximum allowed credit price
   const dskapi_maxstojnost = document.getElementById("dskapi_cart_maxstojnost");
   const maxPrice = parseFloat(dskapi_maxstojnost?.value || "999999");
 
+  // Validate price is within allowed range
   if (dskapi_price <= maxPrice) {
+    // Show popup
     const dskapiCartPopupContainer = document.getElementById(
       "dskapi-cart-popup-container"
     );
     if (dskapiCartPopupContainer) {
       dskapiCartPopupContainer.style.display = "block";
     }
+    // Trigger initial calculation
     dskapi_cart_pogasitelni_vnoski_input_change();
   } else {
+    // Price exceeds maximum - show error
     alert(
       "Максимално позволената цена за кредит " +
         maxPrice.toFixed(2) +
@@ -205,7 +260,9 @@ function dskapiCartButtonClick() {
 }
 
 /**
- * Close the cart popup.
+ * Closes the cart credit popup.
+ *
+ * @returns {void}
  */
 function dskapiCartClosePopup() {
   const dskapiCartPopupContainer = document.getElementById(
@@ -216,7 +273,20 @@ function dskapiCartClosePopup() {
   }
 }
 
-// Use event delegation on document - works even after AJAX updates
+/**
+ * Global click event listener using event delegation.
+ *
+ * Handles clicks for elements that may be dynamically loaded/replaced
+ * after WooCommerce AJAX cart updates. Event delegation ensures handlers
+ * work even after DOM elements are replaced.
+ *
+ * Handled elements:
+ * - #btn_dskapi_cart: Main DSK credit button
+ * - #dskapi_cart_buy_credit: Buy on credit button in popup
+ * - #dskapi_cart_back_credit: Back/Cancel button in popup
+ *
+ * @listens document#click
+ */
 document.addEventListener("click", function (e) {
   // Main DSK cart button
   if (e.target.closest("#btn_dskapi_cart")) {
@@ -241,15 +311,24 @@ document.addEventListener("click", function (e) {
 });
 
 /**
- * Refresh DSK cart button via AJAX.
- * Called after WooCommerce updates the cart to get fresh button with new totals.
+ * Refreshes the DSK cart button via AJAX.
+ *
+ * Called after WooCommerce updates the cart (quantity change, coupon, etc.)
+ * to fetch fresh button HTML with recalculated totals and credit values.
+ *
+ * Uses WordPress AJAX endpoint with nonce verification for security.
+ * Replaces the button container content with new HTML from server.
+ *
+ * @returns {void}
  */
 function dskapiRefreshCartButton() {
+  // Check if localized vars are available
   if (typeof dskapi_cart_vars === "undefined") {
     console.log("DSKAPI Cart: vars not available");
     return;
   }
 
+  // Make AJAX request to refresh button
   fetch(dskapi_cart_vars.ajax_url, {
     method: "POST",
     headers: {
@@ -286,7 +365,15 @@ function dskapiRefreshCartButton() {
     });
 }
 
-// Listen for WooCommerce cart update events to refresh button
+/**
+ * WooCommerce cart update event listeners.
+ *
+ * Listens for WooCommerce jQuery events that fire after cart is updated:
+ * - updated_cart_totals: Fired after cart totals are recalculated
+ * - updated_wc_div: Fired after cart fragments are updated
+ *
+ * Triggers button refresh to sync with new cart totals.
+ */
 if (typeof jQuery !== "undefined") {
   jQuery(document.body).on("updated_cart_totals updated_wc_div", function () {
     // Cart was updated via AJAX - refresh DSK button with new totals

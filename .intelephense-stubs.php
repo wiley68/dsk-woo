@@ -216,6 +216,19 @@ namespace {
     }
 
     /**
+     * Outputs the html checked attribute.
+     *
+     * @param mixed $checked One of the values to compare.
+     * @param mixed $current The other value to compare.
+     * @param bool  $echo    Whether to echo or just return the string.
+     * @return string
+     */
+    function checked($checked, $current = true, $echo = true)
+    {
+        return '';
+    }
+
+    /**
      * @param string $text
      * @return string
      */

@@ -1,6 +1,33 @@
 <?php
 
-/** load plugin class */
+/**
+ * DSK API Payment Gateway - Core Functions
+ *
+ * Contains all helper functions for the DSK POS Loans plugin including:
+ * - Gateway class loading and database setup
+ * - Order column customization for WooCommerce
+ * - Frontend scripts and styles enqueuing
+ * - Credit button display for product and cart pages
+ * - Advertisement banner functionality
+ * - Checkout redirect and payment method preselection
+ *
+ * @package DSK_POS_Loans
+ * @since   1.0.0
+ */
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+/**
+ * Loads the payment gateway class and checks for database updates.
+ *
+ * Includes the gateway class file only if WooCommerce is active.
+ * Also triggers database table creation/update if version mismatch detected.
+ *
+ * @since 1.0.0
+ * @return void
+ */
 function dskapi_load_class_plugin()
 {
     if (!class_exists('WC_Payment_Gateway'))
@@ -14,8 +41,15 @@ function dskapi_load_class_plugin()
 }
 
 /**
- * Create plugin database tables.
- * 
+ * Creates or updates the plugin's database tables.
+ *
+ * Uses WordPress dbDelta function to handle table creation
+ * and schema updates in a safe manner.
+ *
+ * Creates the following tables:
+ * - {prefix}dskpayment_orders: Stores DSK payment order statuses
+ *
+ * @since 1.2.0
  * @return void
  */
 function dskapi_create_tables()
@@ -45,26 +79,52 @@ function dskapi_create_tables()
     update_option('dskapi_db_version', DSKAPI_DB_VERSION);
 }
 
-/** add payment gateway */
+/**
+ * Registers the DSK payment gateway with WooCommerce.
+ *
+ * @since 1.0.0
+ * @param array $gateways Registered payment gateways.
+ * @return array Modified array with DSK gateway added.
+ */
 function add_dskapi_gateway_class($gateways)
 {
     $gateways[] = 'Dskapi_Payment_Gateway';
     return $gateways;
 }
 
-/** do output buffer */
+/**
+ * Starts output buffering.
+ *
+ * Used to capture output for redirect handling.
+ *
+ * @since 1.0.0
+ * @return void
+ */
 function dskapi_do_output_buffer()
 {
     ob_start();
 }
 
-/** load admin menu */
+/**
+ * Loads the admin options page.
+ *
+ * Includes the admin settings page template.
+ *
+ * @since 1.0.0
+ * @return void
+ */
 function dskapi_admin_options()
 {
     include('dskapi_import_admin.php');
 }
 
-/** add origins */
+/**
+ * Adds DSK API URL to allowed CORS origins.
+ *
+ * @since 1.0.0
+ * @param array $origins List of allowed origins.
+ * @return array Modified origins with DSK API URL added.
+ */
 function dskapi_add_allowed_origins($origins)
 {
     $origins[] = DSKAPI_LIVEURL;
@@ -72,11 +132,14 @@ function dskapi_add_allowed_origins($origins)
 }
 
 /**
- * Redirect to checkout with DSK payment gateway after add to cart.
- * Triggered when dskapi_checkout=1 is present in request.
+ * Redirects to checkout after adding product to cart via DSK button.
  *
+ * Triggered when dskapi_checkout=1 is present in request.
+ * Redirects to checkout page with DSK payment method preselected.
+ *
+ * @since 1.2.0
  * @param string $url Default redirect URL.
- * @return string Modified redirect URL.
+ * @return string Modified redirect URL pointing to checkout.
  */
 function dskapi_add_to_cart_redirect($url)
 {
@@ -88,9 +151,12 @@ function dskapi_add_to_cart_redirect($url)
 }
 
 /**
- * Preselect DSK payment gateway on checkout page.
- * Sets chosen_payment_method in WooCommerce session when payment_method GET param is present.
+ * Preselects DSK payment gateway on checkout page.
  *
+ * Sets the chosen_payment_method in WooCommerce session
+ * when payment_method GET parameter is present in URL.
+ *
+ * @since 1.2.0
  * @return void
  */
 function dskapi_template_redirect()
@@ -110,11 +176,14 @@ function dskapi_template_redirect()
 }
 
 /**
- * Add DSK cart button to WooCommerce cart fragments.
- * This ensures the button is updated when cart is refreshed via AJAX.
+ * Adds DSK cart button HTML to WooCommerce cart fragments.
  *
- * @param array $fragments Cart fragments to update.
- * @return array Updated fragments.
+ * This ensures the DSK credit button is updated when cart is
+ * refreshed via AJAX (quantity changes, coupons, etc.).
+ *
+ * @since 1.2.0
+ * @param array $fragments Cart fragments to update via AJAX.
+ * @return array Updated fragments with DSK button HTML.
  */
 function dskapi_cart_fragments($fragments)
 {
@@ -137,9 +206,13 @@ function dskapi_cart_fragments($fragments)
 
 /**
  * AJAX handler to refresh DSK cart button.
- * Called after cart is updated to get fresh button HTML.
  *
- * @return void
+ * Called after cart is updated to get fresh button HTML
+ * with recalculated totals and credit values.
+ * Returns JSON response with button HTML.
+ *
+ * @since 1.2.0
+ * @return void Outputs JSON and exits.
  */
 function dskapi_refresh_cart_button()
 {
@@ -150,7 +223,16 @@ function dskapi_refresh_cart_button()
     wp_send_json_success(['html' => $html]);
 }
 
-/** add order column dskapi status */
+/**
+ * Adds DSK status column to WooCommerce orders table (legacy).
+ *
+ * Works with post-based order storage (pre-HPOS).
+ * Inserts column before the order_actions column.
+ *
+ * @since 1.0.0
+ * @param array $columns Order table columns.
+ * @return array Modified columns with DSK status added.
+ */
 function dskapi_add_order_column_status($columns)
 {
     $dskapi_status_columns = (is_array($columns)) ? $columns : array();
@@ -160,7 +242,16 @@ function dskapi_add_order_column_status($columns)
     return $dskapi_status_columns;
 }
 
-/** add order column dskapi status hpos */
+/**
+ * Adds DSK status column to WooCommerce orders table (HPOS).
+ *
+ * Works with High-Performance Order Storage (HPOS).
+ * Inserts column after the order_status column.
+ *
+ * @since 1.2.0
+ * @param array $columns Order table columns.
+ * @return array Modified columns with DSK status added.
+ */
 function dskapi_add_order_column_status_hpos($columns)
 {
     $dskapi_reordered_columns = array();
@@ -173,11 +264,14 @@ function dskapi_add_order_column_status_hpos($columns)
     return $dskapi_reordered_columns;
 }
 
-/** add order column dskapi status values */
 /**
- * Display DSK API status in orders table column (legacy post-based).
+ * Displays DSK status value in orders table column (legacy).
  *
- * @param string $column Column name.
+ * Retrieves status label from Dskapi_Orders helper class.
+ * Works with post-based order storage.
+ *
+ * @since 1.0.0
+ * @param string $column Column name being rendered.
  * @return void
  */
 function dskapi_add_order_column_status_values($column)
@@ -191,11 +285,14 @@ function dskapi_add_order_column_status_values($column)
     echo esc_html(Dskapi_Orders::get_status_label($post->ID));
 }
 
-/** add order column dskapi status values hpos */
 /**
- * Display DSK API status in orders table column (HPOS compatible).
+ * Displays DSK status value in orders table column (HPOS).
  *
- * @param string   $column Column name.
+ * Retrieves status label from Dskapi_Orders helper class.
+ * Works with High-Performance Order Storage.
+ *
+ * @since 1.2.0
+ * @param string   $column Column name being rendered.
  * @param WC_Order $order  WooCommerce order object.
  * @return void
  */
@@ -208,6 +305,17 @@ function dskapi_add_order_column_status_values_hpos($column, $order)
     echo esc_html(Dskapi_Orders::get_status_label($order->get_id()));
 }
 
+/**
+ * Retrieves sanitized GET/POST parameters.
+ *
+ * Helper function to safely get request parameters
+ * with SQL escaping and whitespace trimming.
+ *
+ * @since 1.0.0
+ * @param string|null $param      Parameter name to retrieve, or null for all.
+ * @param mixed       $null_return Default value if parameter not found.
+ * @return mixed Parameter value, array of all parameters, or default value.
+ */
 function dskapi_wordpress_get_params($param = null, $null_return = null)
 {
     if ($param) {
@@ -229,8 +337,17 @@ function dskapi_wordpress_get_params($param = null, $null_return = null)
 }
 
 /**
- * Enqueue frontend styles and scripts.
+ * Enqueues frontend styles and scripts.
  *
+ * Loads page-specific CSS and JavaScript files:
+ * - Front page: Advertisement banner styles and scripts
+ * - Product page: Credit button and popup functionality
+ * - Cart page: Cart credit button with AJAX support
+ * - Checkout page: Interest rates popup
+ *
+ * Uses file modification time for cache busting.
+ *
+ * @since 1.0.0
  * @return void
  */
 function dskapi_add_meta()
@@ -258,7 +375,7 @@ function dskapi_add_meta()
         wp_enqueue_style('dskapi_style_cart', DSKAPI_CSS_URI . '/dskapi.css', [], filemtime($css_file), 'all');
         wp_enqueue_script('dskapi_js_cart', DSKAPI_JS_URI . '/dskapi_cart.js', ['jquery'], filemtime($js_file), true);
 
-        // Pass AJAX URL to JavaScript
+        // Pass AJAX URL and nonce to JavaScript
         wp_localize_script('dskapi_js_cart', 'dskapi_cart_vars', [
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('dskapi_cart_nonce')
@@ -275,8 +392,20 @@ function dskapi_add_meta()
 }
 
 /**
- * Display advertisement banner on front page.
+ * Displays advertisement banner on the front page.
  *
+ * Shows a floating DSK Bank promotional banner with:
+ * - Clickable logo that toggles info container (desktop)
+ * - Direct link to procedure page (mobile)
+ * - Promotional text and images from API
+ *
+ * Only displays when:
+ * - On front page
+ * - Plugin is enabled
+ * - Advertisement option is enabled
+ * - API returns valid banner data
+ *
+ * @since 1.0.0
  * @return void
  */
 function dskapi_reklama()
@@ -328,7 +457,32 @@ function dskapi_reklama()
 }
 
 
-/** vizualize credit button */
+/**
+ * Displays DSK credit button on product pages.
+ *
+ * Renders a credit calculator button and popup modal that allows
+ * customers to view installment options and proceed to checkout
+ * with DSK Bank financing.
+ *
+ * Features:
+ * - Dynamic installment calculation via API
+ * - Support for variable products
+ * - Mobile/desktop responsive design
+ * - Direct checkout or popup mode based on settings
+ * - Currency conversion (EUR/BGN)
+ *
+ * Only displays when:
+ * - Plugin is enabled
+ * - Product price is greater than zero
+ * - Product price is within allowed credit range
+ * - Currency is EUR or BGN
+ * - API returns valid data
+ *
+ * @since 1.0.0
+ * @global WC_Product $product Current product object.
+ * @global WooCommerce $woocommerce WooCommerce instance.
+ * @return void|null Returns null if conditions not met.
+ */
 function dskpayment_button()
 {
     $dskapi_status = (string)get_option("dskapi_status");
@@ -554,6 +708,20 @@ function dskpayment_button()
     }
 }
 
+/**
+ * Handles order status update callback from DSK Bank API.
+ *
+ * Receives order_id, status, and calculator_id from bank's webhook.
+ * Updates the order status in the local database if calculator_id matches.
+ *
+ * Expected POST/GET parameters:
+ * - order_id: WooCommerce order ID
+ * - status: New status code (0-8)
+ * - calculator_id: Must match configured dskapi_cid
+ *
+ * @since 1.0.0
+ * @return void Outputs JSON response and exits.
+ */
 function dskapi_updateorder()
 {
     $json = array();
@@ -604,10 +772,30 @@ function dskapi_updateorder()
 }
 
 /**
- * Display DSK credit button on cart page.
- * Shows after cart totals with functionality to proceed to checkout with DSK payment.
- * Wrapper div is always output for WooCommerce fragments compatibility.
+ * Displays DSK credit button on WooCommerce cart page.
  *
+ * Renders a credit calculator button and popup modal that allows
+ * customers to view installment options for their entire cart
+ * and proceed to checkout with DSK Bank financing.
+ *
+ * Features:
+ * - Uses cart total for credit calculation
+ * - Determines product_id (0 for mixed cart, ID for single product)
+ * - Mobile/desktop responsive design
+ * - Direct checkout or popup mode based on settings
+ * - Currency conversion (EUR/BGN)
+ * - AJAX refresh support via WooCommerce fragments
+ *
+ * Always outputs wrapper div for WooCommerce fragments compatibility.
+ *
+ * Only displays button content when:
+ * - Plugin is enabled
+ * - Cart total is greater than zero
+ * - Cart total is within allowed credit range
+ * - Currency is EUR or BGN
+ * - API returns valid data
+ *
+ * @since 1.2.0
  * @return void
  */
 function dskpayment_cart_button()
