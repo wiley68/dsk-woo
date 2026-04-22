@@ -4,7 +4,7 @@
  * Plugin Name: Банка ДСК покупки на Кредит
  * Plugin URI: https://avalonbg.com
  * Description: Дава възможност на Вашите клиенти да закупуват стока на изплащане с Банка ДСК
- * Version: 1.2.0
+ * Version: 1.2.1
  * Author: Avalon Ltd
  * Author URI: https://avalonbg.com
  * Owner: Банка ДСК
@@ -48,7 +48,7 @@ if (! dskapi_is_woocommerce_active()) {
 }
 
 /** Plugin constants */
-define('DSKAPI_VERSION', '1.2.0');
+define('DSKAPI_VERSION', '1.2.1');
 define('DSKAPI_DB_VERSION', '1.0.1');
 define('DSKAPI_PLUGIN_FILE', __FILE__);
 define('DSKAPI_PLUGIN_DIR', untrailingslashit(dirname(__FILE__)));
