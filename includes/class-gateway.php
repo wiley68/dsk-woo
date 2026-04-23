@@ -596,14 +596,14 @@ class Dskapi_Payment_Gateway extends WC_Payment_Gateway
                         // EUR to BGN
                         $dskapi_currency_code_send = 0;
                         if ($dskapi_currency_code == "EUR") {
-                            $dskapi_total = number_format($dskapi_total * 1.95583, 2, ".", "");
+                            $dskapi_total = $dskapi_total * 1.95583;
                         }
                         break;
                     case 2:
                         // BGN to EUR
                         $dskapi_currency_code_send = 1;
                         if ($dskapi_currency_code == "BGN") {
-                            $dskapi_total = number_format($dskapi_total / 1.95583, 2, ".", "");
+                            $dskapi_total = $dskapi_total / 1.95583;
                         }
                         break;
                 }
@@ -640,16 +640,16 @@ class Dskapi_Payment_Gateway extends WC_Payment_Gateway
                             break;
                         case 1:
                             if ($dskapi_currency_code == "EUR") {
-                                $products_p_temp = number_format($products_p_temp * 1.95583, 2, ".", "");
+                                $products_p_temp = $products_p_temp * 1.95583;
                             }
                             break;
                         case 2:
                             if ($dskapi_currency_code == "BGN") {
-                                $products_p_temp = number_format($products_p_temp / 1.95583, 2, ".", "");
+                                $products_p_temp = $products_p_temp / 1.95583;
                             }
                             break;
                     }
-                    $products_p .= $products_p_temp;
+                    $products_p .= number_format($products_p_temp, 2, ".", "");
                     $products_p .= '_';
 
                     // Append product name (sanitized)
@@ -689,7 +689,7 @@ class Dskapi_Payment_Gateway extends WC_Payment_Gateway
                 'address2' => str_replace('"', '', str_replace("'", "", htmlspecialchars_decode($dskapi_billing_address_1, ENT_QUOTES))),
                 'address2city' => str_replace('"', '', str_replace("'", "", htmlspecialchars_decode($dskapi_billing_city, ENT_QUOTES))),
                 'postcode' => $dskapi_billing_postcode,
-                'price' => $dskapi_total,
+                'price' => number_format($dskapi_total, 2, ".", ""),
                 'address' => str_replace('"', '', str_replace("'", "", htmlspecialchars_decode($dskapi_shipping_address_1, ENT_QUOTES))),
                 'addresscity' => str_replace('"', '', str_replace("'", "", htmlspecialchars_decode($dskapi_shipping_city, ENT_QUOTES))),
                 'products_id' => $products_id,
