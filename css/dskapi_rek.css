@@ -1,62 +1,64 @@
 @font-face {
-	font-family: 'squad-regular';
-	src: url('Squad-Regular.woff2') format('woff2'),
-		url('Squad-Regular.woff') format('woff');
+	font-family: "squad-regular";
+	src:
+		url("Squad-Regular.woff2") format("woff2"),
+		url("Squad-Regular.woff") format("woff");
 	font-weight: normal;
 	font-style: normal;
 }
 @font-face {
-	font-family: 'squad-bold';
-	src: url('Squad-Bold.woff2') format('woff2'),
-		url('Squad-Bold.woff') format('woff');
+	font-family: "squad-bold";
+	src:
+		url("Squad-Bold.woff2") format("woff2"),
+		url("Squad-Bold.woff") format("woff");
 	font-weight: bold;
 	font-style: normal;
 }
 /* dskapi float */
-.dskapi_float{
-	z-index:999;
-	position:fixed;
-	width:60px;
-	height:60px;
-	top:calc(100% / 2 + 130px);
-	left:0px;
-	background-color:#ffffff;
-	border-top:1px solid #006648;
-	border-right:1px solid #006648;
-	border-bottom:1px solid #006648;
-	color:#FFF;
-	border-top-right-radius:8px;
-	border-bottom-right-radius:8px;
-	text-align:center;
+.dskapi_float {
+	z-index: 999;
+	position: fixed;
+	width: 60px;
+	height: 60px;
+	top: calc(100% / 2 + 130px);
+	left: 0px;
+	background-color: #ffffff;
+	border-top: 1px solid #006648;
+	border-right: 1px solid #006648;
+	border-bottom: 1px solid #006648;
+	color: #fff;
+	border-top-right-radius: 8px;
+	border-bottom-right-radius: 8px;
+	text-align: center;
 	box-shadow: 2px 2px 3px #999;
-	cursor:pointer;
+	cursor: pointer;
 	display: flex;
 	justify-content: center;
 	align-items: center;
 }
-.dskapi-my-float{
+.dskapi-my-float {
 	width: 40px;
 	height: 35px;
 }
-.dskapi-label-container{
-	z-index:999;
-	position:fixed;
-	top:calc(100% / 2 + 30px);
-	left:67px;
-	display:table;
+.dskapi-label-container {
+	z-index: 999;
+	position: fixed;
+	top: calc(100% / 2 + 30px);
+	left: 67px;
+	display: table;
 	visibility: hidden;
 }
-.dskapi-label-text{
-	width:410px;
-	height:260px;
-	color:#006648;
-	vertical-align:top;
-	padding-left:5px;
+.dskapi-label-text {
+	width: 410px;
+	height: 260px;
+	color: #006648;
+	vertical-align: top;
+	padding-left: 5px;
 	border-radius: 14.5px;
 	background-color: #ffffff;
 	overflow: none;
 }
-.dskapi-label-text-mask{
+.dskapi-label-text-mask {
 	display: flex;
 	flex-direction: column;
 	height: 100%;
@@ -96,7 +98,7 @@ p.dskapi_txt2 {
 	color: #414546;
 	background-color: white;
 }
-p.dskapi-label-text-a{
+p.dskapi-label-text-a {
 	width: 100%;
 	font-family: squad-regular;
 	font-weight: 300;
@@ -104,13 +106,13 @@ p.dskapi-label-text-a{
 	padding: 5px 15px 0px 15px;
 	text-align: center;
 	text-decoration: underline;
-	color: #52AE30;
+	color: #52ae30;
 	cursor: pointer;
 }
-p.dskapi-label-text-a:hover{
-	color: #52AE30;
+p.dskapi-label-text-a:hover {
+	color: #52ae30;
 }
-p.dskapi-label-text-a:visited{
-	color: #52AE30;
+p.dskapi-label-text-a:visited {
+	color: #52ae30;
 }
 /* dskapi float */

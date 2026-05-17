@@ -330,6 +330,67 @@ namespace {
     }
 
     /**
+     * Verifies the AJAX referer nonce for admin requests.
+     *
+     * @param int|string $action    Nonce action.
+     * @param string     $query_arg Request parameter name. Default '_wpnonce'.
+     * @return int|false 1 or 2 on success, false on failure.
+     */
+    function check_admin_referer($action = -1, $query_arg = '_wpnonce')
+    {
+        return 1;
+    }
+
+    /**
+     * Verifies the AJAX referer nonce.
+     *
+     * @param int|string $action    Nonce action.
+     * @param false|int  $stop      Whether to die on failure. Default true.
+     * @param string     $query_arg Request parameter name. Default false (uses '_ajax_nonce' or 'nonce').
+     * @return int|false 1 or 2 on success, false on failure.
+     */
+    function check_ajax_referer($action = -1, $stop = true, $query_arg = false)
+    {
+        return 1;
+    }
+
+    /**
+     * Whether the current user has a specific capability.
+     *
+     * @param string $capability Capability name.
+     * @param int    $object_id  Optional object ID.
+     * @return bool
+     */
+    function current_user_can($capability, $object_id = null)
+    {
+        return true;
+    }
+
+    /**
+     * Outputs a nonce field for admin forms.
+     *
+     * @param int|string $action  Nonce action.
+     * @param string     $name    Field name. Default '_wpnonce'.
+     * @param bool       $referer Whether to include referer field.
+     * @param bool       $display Whether to echo. Default true.
+     * @return string Nonce field HTML when $display is false.
+     */
+    function wp_nonce_field($action = -1, $name = '_wpnonce', $referer = true, $display = true)
+    {
+        return '';
+    }
+
+    /**
+     * Sends a JSON response and terminates execution.
+     *
+     * @param mixed $response    Data to encode as JSON.
+     * @param int   $status_code HTTP status code. Default 200.
+     * @param int   $options     json_encode() options.
+     * @return void
+     */
+    function wp_send_json($response, $status_code = 200, $options = 0) {}
+
+    /**
      * Send a JSON response with success status.
      *
      * @param mixed $data Data to encode as JSON.
@@ -538,6 +599,24 @@ namespace {
     {
         return '';
     }
+
+    /**
+     * Sets the activation hook for a plugin.
+     *
+     * @param string   $file     Main plugin file path.
+     * @param callable $callback Function to run on activation.
+     * @return void
+     */
+    function register_activation_hook($file, $callback) {}
+
+    /**
+     * Sets the deactivation hook for a plugin.
+     *
+     * @param string   $file     Main plugin file path.
+     * @param callable $callback Function to run on deactivation.
+     * @return void
+     */
+    function register_deactivation_hook($file, $callback) {}
 
     /**
      * @param string $path

@@ -1,44 +1,47 @@
 @font-face {
-	font-family: 'squad-regular';
-	src: url('Squad-Regular.woff2') format('woff2'),
-		url('Squad-Regular.woff') format('woff');
+	font-family: "squad-regular";
+	src:
+		url("Squad-Regular.woff2") format("woff2"),
+		url("Squad-Regular.woff") format("woff");
 	font-weight: normal;
 	font-style: normal;
-	}
-	@font-face {
-	font-family: 'squad-bold';
-	src: url('Squad-Bold.woff2') format('woff2'),
-		url('Squad-Bold.woff') format('woff');
+}
+@font-face {
+	font-family: "squad-bold";
+	src:
+		url("Squad-Bold.woff2") format("woff2"),
+		url("Squad-Bold.woff") format("woff");
 	font-weight: bold;
 	font-style: normal;
-	}
-	@font-face {
-	font-family: 'squad-light';
-	src: url('Squad-Light.woff2') format('woff2'),
-		url('Squad-Light.woff') format('woff');
+}
+@font-face {
+	font-family: "squad-light";
+	src:
+		url("Squad-Light.woff2") format("woff2"),
+		url("Squad-Light.woff") format("woff");
 	font-weight: normal;
 	font-style: normal;
-	}
-	/* product */
-	.dskapi_table {
+}
+/* product */
+.dskapi_table {
 	padding: 0px;
 	margin: 0px;
 	border: 0px none white;
-	}
-	.dskapi_button_table {
+}
+.dskapi_button_table {
 	padding: 2px 0px;
 	text-align: center;
 	border: 0px none white;
-	}
-	.dskapi_button_table p {
+}
+.dskapi_button_table p {
 	padding: 0px;
 	color: #52ae30;
 	font-size: 16pt;
 	font-weight: bold;
 	background-color: transparent;
 	font-family: squad-bold;
-	}
-	.dskapi_button_div_txt {
+}
+.dskapi_button_div_txt {
 	width: 252px;
 	font-size: 16px;
 	font-weight: bold;
@@ -48,22 +51,22 @@
 	background-color: transparent;
 	color: #006648;
 	font-family: squad-regular;
-	}
-	.dskapi_table_img {
+}
+.dskapi_table_img {
 	padding: 0px;
 	margin: 0px;
 	max-width: 155px;
 	border: 0px none white;
-	}
-	.dskapi_btn_click {
+}
+.dskapi_btn_click {
 	cursor: pointer;
-	}
-	.dskapi_logo {
+}
+.dskapi_logo {
 	max-width: 155px;
 	max-height: 55px;
-	}
-	/* calculator popup */
-	.modalpayment_dskapi {
+}
+/* calculator popup */
+.modalpayment_dskapi {
 	display: none;
 	position: fixed;
 	z-index: 4000000;
@@ -75,40 +78,40 @@
 	background-color: rgb(0, 0, 0);
 	background-color: rgba(0, 0, 0, 0.4);
 	padding-top: 20px;
-	}
-	.modalpayment-content_dskapi {
+}
+.modalpayment-content_dskapi {
 	position: relative;
 	margin: auto;
 	padding: 0;
 	max-width: 1100px;
 	border-radius: 14.5px;
-	}
-	.dskapi_body {
+}
+.dskapi_body {
 	padding: 0px;
 	height: 100%;
-	}
-	.dskapi_PopUp_Detailed_v1 {
+}
+.dskapi_PopUp_Detailed_v1 {
 	border-radius: 14.5px;
 	width: 1100px;
 	background-color: #ffffff;
 	overflow: none;
 	margin: auto;
-	}
-	.dskapi_Mask {
+}
+.dskapi_Mask {
 	display: flex;
 	flex-direction: column;
 	border-radius: 14.5px;
 	background-color: #ffffff;
 	-webkit-box-shadow: 0px 0px 30px 0px #000000;
 	box-shadow: 0px 0px 30px 0px #000000;
-	}
-	.dskapi_header {
+}
+.dskapi_header {
 	width: 100%;
 	margin: 0 0 7.7px;
 	border-radius: 14.5px 14.5px 0px 0px;
 	object-fit: contain;
-	}
-	p.dskapi_product_name {
+}
+p.dskapi_product_name {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -119,39 +122,39 @@
 	line-height: 24px;
 	color: #006648;
 	text-align: center;
-	}
-	.dskapi_body_panel_txt3 {
+}
+.dskapi_body_panel_txt3 {
 	display: flex;
 	flex-direction: row;
 	height: 300px;
 	padding: 0px 15px 0px 15px;
-	}
-	.dskapi_body_panel_txt4 {
+}
+.dskapi_body_panel_txt4 {
 	display: flex;
 	flex-direction: row;
 	font-size: 14px;
 	padding: 0px 15px 0px 15px;
-	}
-	.dskapi_body_panel_txt3_left {
+}
+.dskapi_body_panel_txt3_left {
 	width: 45%;
 	font-family: squad-light;
 	font-size: 18px;
 	line-height: 22px;
 	color: #414546;
 	padding-right: 10px;
-	}
-	.dskapi_body_panel_txt3_left p {
+}
+.dskapi_body_panel_txt3_left p {
 	font-size: 18px;
-	}
-	.dskapi_body_panel_txt3_right {
+}
+.dskapi_body_panel_txt3_right {
 	width: 55%;
 	font-family: squad-regular;
 	font-size: 18px;
 	line-height: 22px;
 	color: #414546;
 	padding-left: 10px;
-	}
-	select.dskapi_txt_right {
+}
+select.dskapi_txt_right {
 	font-family: squad-light;
 	font-size: 22px;
 	color: #414546;
@@ -161,9 +164,9 @@
 	border-bottom: 1px solid #b0b0b0;
 	background-color: white;
 	width: 100%;
-	}
-	select.dskapi_txt_right:active,
-	select.dskapi_txt_right:focus {
+}
+select.dskapi_txt_right:active,
+select.dskapi_txt_right:focus {
 	font-family: squad-light;
 	font-size: 22px;
 	color: #414546;
@@ -173,16 +176,16 @@
 	border-bottom: 1px solid #b0b0b0;
 	width: 100%;
 	outline: none;
-	}
-	.dskapi_sumi_panel {
+}
+.dskapi_sumi_panel {
 	display: flex;
 	flex-direction: row;
 	width: 100%;
 	height: 110px;
 	margin-top: 20px;
 	background-color: white;
-	}
-	.dskapi_kredit_panel {
+}
+.dskapi_kredit_panel {
 	display: flex;
 	flex-direction: column;
 	width: 50%;
@@ -198,8 +201,8 @@
 	-o-user-select: none;
 	margin-right: 10px;
 	background-color: white;
-	}
-	.dskapi_sumi_txt {
+}
+.dskapi_sumi_txt {
 	display: flex;
 	height: 30px;
 	font-family: squad-light;
@@ -207,8 +210,8 @@
 	color: #414546;
 	align-items: center;
 	justify-content: center;
-	}
-	input[type='text'].dskapi_mesecna_price {
+}
+input[type="text"].dskapi_mesecna_price {
 	border: 0px none white;
 	background-color: white;
 	padding: 0px;
@@ -220,8 +223,8 @@
 	color: #414546;
 	text-align: center;
 	box-shadow: none;
-	}
-	.dskapi_btn {
+}
+.dskapi_btn {
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -242,11 +245,11 @@
 	-khtml-user-select: none;
 	-webkit-user-select: none;
 	-o-user-select: none;
-	}
-	.dskapi_btn:hover {
+}
+.dskapi_btn:hover {
 	color: white;
-	}
-	.dskapi_btn_cancel {
+}
+.dskapi_btn_cancel {
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -267,11 +270,11 @@
 	-khtml-user-select: none;
 	-webkit-user-select: none;
 	-o-user-select: none;
-	}
-	.dskapi_btn_cancel:hover {
+}
+.dskapi_btn_cancel:hover {
 	color: white;
-	}
-	.dskapi_body_panel_footer {
+}
+.dskapi_body_panel_footer {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
@@ -279,13 +282,13 @@
 	padding: 20px 15px;
 	background-color: #006648;
 	border-radius: 0px 0px 14.5px 14.5px;
-	}
-	.dskapi_body_panel_left {
+}
+.dskapi_body_panel_left {
 	flex: 1;
 	height: 100%;
 	text-align: left;
-	}
-	.dskapi_txt_footer {
+}
+.dskapi_txt_footer {
 	padding-left: 57px;
 	padding-right: 10px;
 	font-family: squad-light;
@@ -297,7 +300,7 @@
 	line-height: normal;
 	letter-spacing: normal;
 	text-align: right;
-	}
+}
 
 /* Popup responsive layout (matches <picture> banner breakpoint). */
 @media screen and (max-width: 767px) {
