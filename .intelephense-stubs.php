@@ -1,9 +1,10 @@
 <?php
 
 /**
- * Intelephense stubs за WooCommerce и WordPress класове
- * Този файл НЕ се изпълнява - служи само за IDE автодовършване
- * 
+ * Intelephense stubs за WooCommerce и WordPress функции/класове.
+ * Този файл НЕ се изпълнява — само за IDE (Intelephense).
+ * При липсващи WP/WC символи в редактора: добавяй stub тук, не заменяй с custom PHP.
+ *
  * @package DSK Credit API
  */
 
@@ -45,7 +46,7 @@ namespace {
 
     /**
      * Removes a site option from the database.
-     * 
+     *
      * @param string $option Name of the option to delete.
      * @return bool True if the option was deleted, false otherwise.
      */
@@ -56,7 +57,7 @@ namespace {
 
     /**
      * Clears the object cache of all data.
-     * 
+     *
      * @return bool True on success, false on failure.
      */
     function wp_cache_flush()
@@ -66,7 +67,7 @@ namespace {
 
     /**
      * Adds a submenu page to the Settings main menu.
-     * 
+     *
      * @param string $page_title The text to be displayed in the title tags.
      * @param string $menu_title The text to be used for the menu.
      * @param string $capability The capability required for access.
@@ -82,7 +83,7 @@ namespace {
 
     /**
      * Modifies the database based on specified SQL statements.
-     * 
+     *
      * @param string|array $queries SQL queries to run.
      * @param bool $execute Whether to execute the query. Default true.
      * @return array Strings containing the results of the queries.
@@ -247,8 +248,19 @@ namespace {
     }
 
     /**
+     * Sanitizes a string key (lowercase alphanumeric, dashes, underscores).
+     *
+     * @param string $key String key.
+     * @return string Sanitized key.
+     */
+    function sanitize_key($key)
+    {
+        return $key;
+    }
+
+    /**
      * Converts a value to a non-negative integer.
-     * 
+     *
      * @param mixed $maybeint Data to convert to a non-negative integer.
      * @return int A non-negative integer.
      */
@@ -259,7 +271,7 @@ namespace {
 
     /**
      * Retrieves the URL to the admin area.
-     * 
+     *
      * @param string $path Optional path relative to the admin URL.
      * @param string $scheme The scheme to use. Default 'admin'.
      * @return string Admin URL.
@@ -271,7 +283,7 @@ namespace {
 
     /**
      * Creates a cryptographic token tied to a specific action.
-     * 
+     *
      * @param string|int $action The action name.
      * @return string The nonce token.
      */
@@ -282,7 +294,7 @@ namespace {
 
     /**
      * Verifies that correct nonce was used.
-     * 
+     *
      * @param string $nonce Nonce to verify.
      * @param string|int $action Action name.
      * @return false|int False if invalid, 1 if valid and generated 0-12 hours ago, 2 if generated 12-24 hours ago.
@@ -294,7 +306,7 @@ namespace {
 
     /**
      * Send a JSON response with success status.
-     * 
+     *
      * @param mixed $data Data to encode as JSON.
      * @param int $status_code HTTP status code. Default 200.
      * @return void
@@ -303,23 +315,12 @@ namespace {
 
     /**
      * Send a JSON response with error status.
-     * 
+     *
      * @param mixed $data Data to encode as JSON.
      * @param int $status_code HTTP status code. Default 200.
      * @return void
      */
     function wp_send_json_error($data = null, $status_code = 200) {}
-
-    /**
-     * Gets file modification time.
-     * 
-     * @param string $filename Path to the file.
-     * @return int|false Unix timestamp or false on failure.
-     */
-    function filemtime($filename)
-    {
-        return time();
-    }
 
     /**
      * @param string $text
@@ -401,7 +402,7 @@ namespace {
 
     /**
      * Localize a script.
-     * 
+     *
      * @param string $handle Script handle.
      * @param string $object_name Name for the JavaScript object.
      * @param array $l10n Data to pass to the script.
@@ -701,16 +702,6 @@ namespace {
     function wp_unslash($value)
     {
         return is_array($value) ? array_map('wp_unslash', $value) : stripslashes($value);
-    }
-
-    /**
-     * @param string $string
-     * @param int $flags
-     * @return string
-     */
-    function htmlspecialchars_decode($string, $flags = ENT_COMPAT)
-    {
-        return $string;
     }
 
     // ============================================================================

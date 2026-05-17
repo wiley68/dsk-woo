@@ -23,5 +23,9 @@
     "editor.insertSpaces": false,
     "editor.tabSize": 4
   },
-  "intelephense.environment.includePaths": ["${workspaceFolder}/vendor"]
+  "intelephense.environment.includePaths": [
+    "${workspaceFolder}/vendor",
+    "${workspaceFolder}"
+  ],
+  "intelephense.files.exclude": ["**/vendor/**", "**/.git/**"]
 }

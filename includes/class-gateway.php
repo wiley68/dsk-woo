@@ -327,36 +327,6 @@ class Dskapi_Payment_Gateway extends WC_Payment_Gateway {
 			$dskapi_vnoski_visible_arr = Dskapi_Client::parse_installment_visibility( $dskapi_vnoski_visible, $dskapi_vnoski );
 		}
 
-		// Determine mobile/desktop CSS classes
-		$dskapi_is_mobile = Dskapi_Client::is_mobile();
-		if ( $dskapi_is_mobile ) {
-			$dskapi_PopUp_Detailed_v1     = 'dskapim_PopUp_Detailed_v1';
-			$dskapi_Mask                  = 'dskapim_Mask';
-			$dskapi_picture               = ! empty( $paramsdskapi ) ? DSKAPI_LIVEURL . '/calculators/assets/img/dskm' . $paramsdskapi['dsk_reklama'] . '.png' : '';
-			$dskapi_product_name          = 'dskapim_product_name';
-			$dskapi_body_panel_txt3       = 'dskapim_body_panel_txt3';
-			$dskapi_body_panel_txt4       = 'dskapim_body_panel_txt4';
-			$dskapi_body_panel_txt3_left  = 'dskapim_body_panel_txt3_left';
-			$dskapi_body_panel_txt3_right = 'dskapim_body_panel_txt3_right';
-			$dskapi_sumi_panel            = 'dskapim_sumi_panel';
-			$dskapi_kredit_panel          = 'dskapim_kredit_panel';
-			$dskapi_body_panel_footer     = 'dskapim_body_panel_footer';
-			$dskapi_body_panel_left       = 'dskapim_body_panel_left';
-		} else {
-			$dskapi_PopUp_Detailed_v1     = 'dskapi_PopUp_Detailed_v1';
-			$dskapi_Mask                  = 'dskapi_Mask';
-			$dskapi_picture               = ! empty( $paramsdskapi ) ? DSKAPI_LIVEURL . '/calculators/assets/img/dsk' . $paramsdskapi['dsk_reklama'] . '.png' : '';
-			$dskapi_product_name          = 'dskapi_product_name';
-			$dskapi_body_panel_txt3       = 'dskapi_body_panel_txt3';
-			$dskapi_body_panel_txt4       = 'dskapi_body_panel_txt4';
-			$dskapi_body_panel_txt3_left  = 'dskapi_body_panel_txt3_left';
-			$dskapi_body_panel_txt3_right = 'dskapi_body_panel_txt3_right';
-			$dskapi_sumi_panel            = 'dskapi_sumi_panel';
-			$dskapi_kredit_panel          = 'dskapi_kredit_panel';
-			$dskapi_body_panel_footer     = 'dskapi_body_panel_footer';
-			$dskapi_body_panel_left       = 'dskapi_body_panel_left';
-		}
-
 		?>
 		<!-- Hidden price field for checkout processing -->
 		<input type="hidden" name="dskapi_price" id="dskapi_price" value="<?php echo esc_attr( $dskapi_price_original ); ?>" />
@@ -382,16 +352,16 @@ class Dskapi_Payment_Gateway extends WC_Payment_Gateway {
 		<div id="dskapi-checkout-popup-container" class="modalpayment_dskapi" style="display:none;">
 			<div class="modalpayment-content_dskapi">
 				<div id="dskapi_body">
-					<div class="<?php echo esc_attr( $dskapi_PopUp_Detailed_v1 ); ?>">
-						<div class="<?php echo esc_attr( $dskapi_Mask ); ?>">
-							<?php if ( ! empty( $dskapi_picture ) ) : ?>
-								<img src="<?php echo esc_url( $dskapi_picture ); ?>" class="dskapi_header">
+					<div class="dskapi_PopUp_Detailed_v1">
+						<div class="dskapi_Mask">
+							<?php if ( ! empty( $paramsdskapi['dsk_reklama'] ) ) : ?>
+								<?php dskapi_render_popup_banner( $paramsdskapi['dsk_reklama'] ); ?>
 							<?php endif; ?>
-							<p class="<?php echo esc_attr( $dskapi_product_name ); ?>">Купи на изплащане със стоков кредит от Банка ДСК</p>
+							<p class="dskapi_product_name">Купи на изплащане със стоков кредит от Банка ДСК</p>
 
-							<div class="<?php echo esc_attr( $dskapi_body_panel_txt3 ); ?>">
+							<div class="dskapi_body_panel_txt3">
 								<!-- Left Panel - Benefits -->
-								<div class="<?php echo esc_attr( $dskapi_body_panel_txt3_left ); ?>">
+								<div class="dskapi_body_panel_txt3_left">
 									<p>
 										• Улеснена процедура за електронно подписване<br />
 										• Атрактивни условия по кредита<br />
@@ -401,12 +371,12 @@ class Dskapi_Payment_Gateway extends WC_Payment_Gateway {
 								</div>
 
 								<!-- Right Panel - Calculator -->
-								<div class="<?php echo esc_attr( $dskapi_body_panel_txt3_right ); ?>">
+								<div class="dskapi_body_panel_txt3_right">
 									<!-- Installment Select -->
 									<select id="dskapi_checkout_vnoski_input" class="dskapi_txt_right" onchange="dskapi_checkout_vnoski_input_change();" onfocus="dskapi_checkout_vnoski_input_focus(this.value);">
 										<?php for ( $i = 3; $i <= 48; $i++ ) : ?>
 											<?php if ( ! empty( $dskapi_vnoski_visible_arr[ $i ] ) ) : ?>
-												<option value="<?php echo $i; ?>" 
+												<option value="<?php echo $i; ?>"
 												<?php
 												if ( $dskapi_vnoski == $i ) {
 													echo 'selected';}
@@ -417,14 +387,14 @@ class Dskapi_Payment_Gateway extends WC_Payment_Gateway {
 									</select>
 
 									<!-- Credit Amount and Monthly Payment -->
-									<div class="<?php echo esc_attr( $dskapi_sumi_panel ); ?>">
-										<div class="<?php echo esc_attr( $dskapi_kredit_panel ); ?>">
+									<div class="dskapi_sumi_panel">
+										<div class="dskapi_kredit_panel">
 											<div class="dskapi_sumi_txt">Размер на кредита /<?php echo esc_html( $dskapi_sign ); ?>/</div>
 											<div>
 												<input class="dskapi_mesecna_price" type="text" id="dskapi_checkout_price_txt" readonly="readonly" value="<?php echo esc_attr( number_format( (float) $dskapi_price, 2, '.', '' ) ); ?>" />
 											</div>
 										</div>
-										<div class="<?php echo esc_attr( $dskapi_kredit_panel ); ?>">
+										<div class="dskapi_kredit_panel">
 											<div class="dskapi_sumi_txt">Месечна вноска /<?php echo esc_html( $dskapi_sign ); ?>/</div>
 											<div>
 												<input class="dskapi_mesecna_price" type="text" id="dskapi_checkout_vnoska" readonly="readonly" value="<?php echo esc_attr( number_format( $dskapi_vnoska, 2, '.', '' ) ); ?>" />
@@ -433,14 +403,14 @@ class Dskapi_Payment_Gateway extends WC_Payment_Gateway {
 									</div>
 
 									<!-- Total Amount and APR -->
-									<div class="<?php echo esc_attr( $dskapi_sumi_panel ); ?>">
-										<div class="<?php echo esc_attr( $dskapi_kredit_panel ); ?>">
+									<div class="dskapi_sumi_panel">
+										<div class="dskapi_kredit_panel">
 											<div class="dskapi_sumi_txt">Обща дължима сума /<?php echo esc_html( $dskapi_sign ); ?>/</div>
 											<div>
 												<input class="dskapi_mesecna_price" type="text" id="dskapi_checkout_obshtozaplashtane" readonly="readonly" value="<?php echo esc_attr( number_format( $dskapi_vnoska * $dskapi_vnoski, 2, '.', '' ) ); ?>" />
 											</div>
 										</div>
-										<div class="<?php echo esc_attr( $dskapi_kredit_panel ); ?>">
+										<div class="dskapi_kredit_panel">
 											<div class="dskapi_sumi_txt">ГПР /%/</div>
 											<div>
 												<input class="dskapi_mesecna_price" type="text" id="dskapi_checkout_gpr" readonly="readonly" value="<?php echo esc_attr( number_format( $dskapi_gpr, 2, '.', '' ) ); ?>" />
@@ -451,14 +421,14 @@ class Dskapi_Payment_Gateway extends WC_Payment_Gateway {
 							</div>
 
 							<!-- Disclaimer -->
-							<div class="<?php echo esc_attr( $dskapi_body_panel_txt4 ); ?>">
+							<div class="dskapi_body_panel_txt4">
 								Изчисленията са направени при допускането за първа падежна дата след 30 дни и са с насочваща цел. Избери най-подходящата месечна вноска.
 							</div>
 
 							<!-- Footer with Close Button -->
-							<div class="<?php echo esc_attr( $dskapi_body_panel_footer ); ?>">
+							<div class="dskapi_body_panel_footer">
 								<div class="dskapi_btn_cancel" id="dskapi_checkout_close_popup">Затвори</div>
-								<div class="<?php echo esc_attr( $dskapi_body_panel_left ); ?>">
+								<div class="dskapi_body_panel_left">
 									<div class="dskapi_txt_footer">Ver. <?php echo esc_html( DSKAPI_VERSION ); ?></div>
 								</div>
 							</div>
