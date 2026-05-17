@@ -9,8 +9,8 @@
  * @since   1.0.0
  */
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 /**
@@ -23,13 +23,12 @@ if (!defined('ABSPATH')) {
  * @see add_options_page()
  * @return void
  */
-function dskapi_admin_actions()
-{
-    add_options_page(
-        'Банка ДСК покупки на Кредит - Настройки на модула', // Page title
-        'Банка ДСК покупки на Кредит',                       // Menu title
-        'manage_options',                                     // Capability required
-        'dskapi-options',                                     // Menu slug
-        'dskapi_admin_options'                                // Callback function
-    );
+function dskapi_admin_actions() {
+	add_options_page(
+		'Банка ДСК покупки на Кредит - Настройки на модула', // Page title
+		'Банка ДСК покупки на Кредит',                       // Menu title
+		'manage_options',                                     // Capability required
+		'dskapi-options',                                     // Menu slug
+		'dskapi_admin_options'                                // Callback function
+	);
 }

@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<ruleset name="DSK POS Loans">
+	<description>WordPress Coding Standards for the DSK POS Loans plugin.</description>
+
+	<file>.</file>
+
+	<arg name="extensions" value="php"/>
+
+	<exclude-pattern>/vendor/*</exclude-pattern>
+	<exclude-pattern>/.git/*</exclude-pattern>
+	<exclude-pattern>/.intelephense-stubs.php</exclude-pattern>
+	<exclude-pattern>/keys/*</exclude-pattern>
+	<exclude-pattern>/node_modules/*</exclude-pattern>
+
+	<rule ref="WordPress">
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+		<exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+	</rule>
+
+	<rule ref="WordPress-Extra"/>
+	<rule ref="WordPress-Docs"/>
+
+	<rule ref="PHPCompatibilityWP"/>
+
+	<config name="minimum_supported_wp_version" value="5.8"/>
+	<config name="testVersion" value="7.4-"/>
+</ruleset>

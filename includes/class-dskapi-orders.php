@@ -2,218 +2,207 @@
 
 /**
  * DSK API Orders Helper Class
- * 
+ *
  * Handles all database operations for DSK payment orders.
  *
  * @package DSK_POS_Loans
  * @since 1.2.0
  */
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 /**
  * Class Dskapi_Orders
- * 
+ *
  * Helper class for managing DSK payment orders in the database.
  */
-class Dskapi_Orders
-{
-    /**
-     * Database table name (without prefix).
-     *
-     * @var string
-     */
-    private static $table = 'dskpayment_orders';
+class Dskapi_Orders {
 
-    /**
-     * Order status labels.
-     *
-     * @var array
-     */
-    private static $status_labels = [
-        0 => 'Създадена Апликация',
-        1 => 'Избрана финансова схема',
-        2 => 'Попълнена Апликация',
-        3 => 'Изпратен Банка',
-        4 => 'Неуспешен контакт с клиента',
-        5 => 'Анулирана апликация',
-        6 => 'Отказана апликация',
-        7 => 'Подписан договор',
-        8 => 'Усвоен кредит',
-    ];
+	/**
+	 * Database table name (without prefix).
+	 *
+	 * @var string
+	 */
+	private static $table = 'dskpayment_orders';
 
-    /**
-     * Get the full table name with prefix.
-     *
-     * @return string
-     */
-    public static function get_table_name()
-    {
-        global $wpdb;
-        return $wpdb->prefix . self::$table;
-    }
+	/**
+	 * Order status labels.
+	 *
+	 * @var array
+	 */
+	private static $status_labels = array(
+		0 => 'Създадена Апликация',
+		1 => 'Избрана финансова схема',
+		2 => 'Попълнена Апликация',
+		3 => 'Изпратен Банка',
+		4 => 'Неуспешен контакт с клиента',
+		5 => 'Анулирана апликация',
+		6 => 'Отказана апликация',
+		7 => 'Подписан договор',
+		8 => 'Усвоен кредит',
+	);
 
-    /**
-     * Get order by WooCommerce order ID.
-     *
-     * @param int $order_id WooCommerce order ID.
-     * @return object|null Order row or null if not found.
-     */
-    public static function get_by_order_id($order_id)
-    {
-        global $wpdb;
-        $table = self::get_table_name();
+	/**
+	 * Get the full table name with prefix.
+	 *
+	 * @return string
+	 */
+	public static function get_table_name() {
+		global $wpdb;
+		return $wpdb->prefix . self::$table;
+	}
 
-        return $wpdb->get_row(
-            $wpdb->prepare("SELECT * FROM {$table} WHERE order_id = %d", $order_id)
-        );
-    }
+	/**
+	 * Get order by WooCommerce order ID.
+	 *
+	 * @param int $order_id WooCommerce order ID.
+	 * @return object|null Order row or null if not found.
+	 */
+	public static function get_by_order_id( $order_id ) {
+		global $wpdb;
+		$table = self::get_table_name();
 
-    /**
-     * Get order status by WooCommerce order ID.
-     *
-     * @param int $order_id WooCommerce order ID.
-     * @return int|null Status code or null if not found.
-     */
-    public static function get_status($order_id)
-    {
-        $order = self::get_by_order_id($order_id);
-        return $order ? (int) $order->order_status : null;
-    }
+		return $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE order_id = %d", $order_id )
+		);
+	}
 
-    /**
-     * Get order status label by WooCommerce order ID.
-     *
-     * @param int $order_id WooCommerce order ID.
-     * @return string Status label or empty string if not found.
-     */
-    public static function get_status_label($order_id)
-    {
-        $status = self::get_status($order_id);
-        return self::status_to_label($status);
-    }
+	/**
+	 * Get order status by WooCommerce order ID.
+	 *
+	 * @param int $order_id WooCommerce order ID.
+	 * @return int|null Status code or null if not found.
+	 */
+	public static function get_status( $order_id ) {
+		$order = self::get_by_order_id( $order_id );
+		return $order ? (int) $order->order_status : null;
+	}
 
-    /**
-     * Convert status code to label.
-     *
-     * @param int|null $status Status code.
-     * @return string Status label.
-     */
-    public static function status_to_label($status)
-    {
-        if ($status === null) {
-            return '';
-        }
-        return self::$status_labels[$status] ?? self::$status_labels[0];
-    }
+	/**
+	 * Get order status label by WooCommerce order ID.
+	 *
+	 * @param int $order_id WooCommerce order ID.
+	 * @return string Status label or empty string if not found.
+	 */
+	public static function get_status_label( $order_id ) {
+		$status = self::get_status( $order_id );
+		return self::status_to_label( $status );
+	}
 
-    /**
-     * Get all status labels.
-     *
-     * @return array
-     */
-    public static function get_status_labels()
-    {
-        return self::$status_labels;
-    }
+	/**
+	 * Convert status code to label.
+	 *
+	 * @param int|null $status Status code.
+	 * @return string Status label.
+	 */
+	public static function status_to_label( $status ) {
+		if ( $status === null ) {
+			return '';
+		}
+		return self::$status_labels[ $status ] ?? self::$status_labels[0];
+	}
 
-    /**
-     * Create a new order record.
-     *
-     * @param int $order_id WooCommerce order ID.
-     * @param int $status   Initial status (default 0).
-     * @return int|false The number of rows inserted, or false on error.
-     */
-    public static function create($order_id, $status = 0)
-    {
-        global $wpdb;
-        $table = self::get_table_name();
+	/**
+	 * Get all status labels.
+	 *
+	 * @return array
+	 */
+	public static function get_status_labels() {
+		return self::$status_labels;
+	}
 
-        // Check if already exists
-        if (self::get_by_order_id($order_id)) {
-            return self::update_status($order_id, $status);
-        }
+	/**
+	 * Create a new order record.
+	 *
+	 * @param int $order_id WooCommerce order ID.
+	 * @param int $status   Initial status (default 0).
+	 * @return int|false The number of rows inserted, or false on error.
+	 */
+	public static function create( $order_id, $status = 0 ) {
+		global $wpdb;
+		$table = self::get_table_name();
 
-        return $wpdb->insert(
-            $table,
-            [
-                'order_id' => $order_id,
-                'order_status' => $status,
-            ],
-            ['%d', '%d']
-        );
-    }
+		// Check if already exists
+		if ( self::get_by_order_id( $order_id ) ) {
+			return self::update_status( $order_id, $status );
+		}
 
-    /**
-     * Update order status.
-     *
-     * @param int $order_id WooCommerce order ID.
-     * @param int $status   New status code.
-     * @return int|false The number of rows updated, or false on error.
-     */
-    public static function update_status($order_id, $status)
-    {
-        global $wpdb;
-        $table = self::get_table_name();
+		return $wpdb->insert(
+			$table,
+			array(
+				'order_id'     => $order_id,
+				'order_status' => $status,
+			),
+			array( '%d', '%d' )
+		);
+	}
 
-        return $wpdb->update(
-            $table,
-            ['order_status' => $status],
-            ['order_id' => $order_id],
-            ['%d'],
-            ['%d']
-        );
-    }
+	/**
+	 * Update order status.
+	 *
+	 * @param int $order_id WooCommerce order ID.
+	 * @param int $status   New status code.
+	 * @return int|false The number of rows updated, or false on error.
+	 */
+	public static function update_status( $order_id, $status ) {
+		global $wpdb;
+		$table = self::get_table_name();
 
-    /**
-     * Delete order record.
-     *
-     * @param int $order_id WooCommerce order ID.
-     * @return int|false The number of rows deleted, or false on error.
-     */
-    public static function delete($order_id)
-    {
-        global $wpdb;
-        $table = self::get_table_name();
+		return $wpdb->update(
+			$table,
+			array( 'order_status' => $status ),
+			array( 'order_id' => $order_id ),
+			array( '%d' ),
+			array( '%d' )
+		);
+	}
 
-        return $wpdb->delete(
-            $table,
-            ['order_id' => $order_id],
-            ['%d']
-        );
-    }
+	/**
+	 * Delete order record.
+	 *
+	 * @param int $order_id WooCommerce order ID.
+	 * @return int|false The number of rows deleted, or false on error.
+	 */
+	public static function delete( $order_id ) {
+		global $wpdb;
+		$table = self::get_table_name();
 
-    /**
-     * Check if order exists.
-     *
-     * @param int $order_id WooCommerce order ID.
-     * @return bool
-     */
-    public static function exists($order_id)
-    {
-        return self::get_by_order_id($order_id) !== null;
-    }
+		return $wpdb->delete(
+			$table,
+			array( 'order_id' => $order_id ),
+			array( '%d' )
+		);
+	}
 
-    /**
-     * Get orders by status.
-     *
-     * @param int $status Status code.
-     * @param int $limit  Maximum number of results (default 100).
-     * @return array
-     */
-    public static function get_by_status($status, $limit = 100)
-    {
-        global $wpdb;
-        $table = self::get_table_name();
+	/**
+	 * Check if order exists.
+	 *
+	 * @param int $order_id WooCommerce order ID.
+	 * @return bool
+	 */
+	public static function exists( $order_id ) {
+		return self::get_by_order_id( $order_id ) !== null;
+	}
 
-        return $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT * FROM {$table} WHERE order_status = %d ORDER BY updated_at DESC LIMIT %d",
-                $status,
-                $limit
-            )
-        );
-    }
+	/**
+	 * Get orders by status.
+	 *
+	 * @param int $status Status code.
+	 * @param int $limit  Maximum number of results (default 100).
+	 * @return array
+	 */
+	public static function get_by_status( $status, $limit = 100 ) {
+		global $wpdb;
+		$table = self::get_table_name();
+
+		return $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$table} WHERE order_status = %d ORDER BY updated_at DESC LIMIT %d",
+				$status,
+				$limit
+			)
+		);
+	}
 }

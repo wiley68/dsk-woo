@@ -14,8 +14,8 @@
  * @type {Object}
  */
 const settings_dskapi = window.wc.wcSettings.getSetting(
-  "dskapipayment_data",
-  {}
+	"dskapipayment_data",
+	{}
 );
 
 /**
@@ -25,7 +25,7 @@ const settings_dskapi = window.wc.wcSettings.getSetting(
  * @type {string}
  */
 const label_dskapi =
-  window.wp.htmlEntities.decodeEntities(settings_dskapi.title) || "DSK Credit";
+	window.wp.htmlEntities.decodeEntities( settings_dskapi.title ) || "DSK Credit";
 
 /**
  * Shorthand reference to WordPress createElement function.
@@ -43,9 +43,12 @@ const elDskapi = window.wp.element.createElement;
  * @returns {Object} React element containing the payment description HTML.
  */
 const Content_dskapi = () => {
-  return elDskapi("div", {
-    dangerouslySetInnerHTML: { __html: settings_dskapi.descriptiondskapi },
-  });
+	return elDskapi(
+		"div",
+		{
+			dangerouslySetInnerHTML: { __html: settings_dskapi.descriptiondskapi },
+		}
+	);
 };
 
 /**
@@ -63,21 +66,21 @@ const Content_dskapi = () => {
  * @property {Object} supports - Features supported by this payment method.
  */
 const Block_Gateway_Dskapi = {
-  name: "dskapipayment",
-  label: label_dskapi,
-  content: Object(window.wp.element.createElement)(Content_dskapi, null),
-  edit: Object(window.wp.element.createElement)(Content_dskapi, null),
-  canMakePayment: () => true,
-  ariaLabel: label_dskapi,
-  supports: {
-    features: settings_dskapi.supports,
-  },
+	name: "dskapipayment",
+	label: label_dskapi,
+	content: Object( window.wp.element.createElement )( Content_dskapi, null ),
+	edit: Object( window.wp.element.createElement )( Content_dskapi, null ),
+	canMakePayment: () => true,
+	ariaLabel: label_dskapi,
+	supports: {
+		features: settings_dskapi.supports,
+	},
 };
 
 /**
  * Register the DSK payment method with WooCommerce Blocks.
  */
-window.wc.wcBlocksRegistry.registerPaymentMethod(Block_Gateway_Dskapi);
+window.wc.wcBlocksRegistry.registerPaymentMethod( Block_Gateway_Dskapi );
 
 /**
  * Gateway Pre-selection Handler (IIFE)
@@ -88,54 +91,61 @@ window.wc.wcBlocksRegistry.registerPaymentMethod(Block_Gateway_Dskapi);
  * @example URL: /checkout/?gateway=dskapipayment
  */
 (function () {
-  /**
-   * URL parameters from the current page.
-   *
-   * @type {URLSearchParams}
-   */
-  const paramsDskapi = new URLSearchParams(window.location.search);
+	/**
+	 * URL parameters from the current page.
+	 *
+	 * @type {URLSearchParams}
+	 */
+	const paramsDskapi = new URLSearchParams( window.location.search );
 
-  /**
-   * The desired gateway ID from URL parameter.
-   *
-   * @type {string|null}
-   */
-  const wantedDskapi = paramsDskapi.get("gateway");
+	/**
+	 * The desired gateway ID from URL parameter.
+	 *
+	 * @type {string|null}
+	 */
+	const wantedDskapi = paramsDskapi.get( "gateway" );
 
-  // Exit if no gateway parameter specified
-  if (!wantedDskapi) return;
+	// Exit if no gateway parameter specified
+	if ( ! wantedDskapi) {
+		return;
+	}
 
-  /**
-   * WooCommerce Blocks registry reference.
-   *
-   * @type {Object|undefined}
-   */
-  const registryDskapi = window.wc && window.wc.wcBlocksRegistry;
+	/**
+	 * WooCommerce Blocks registry reference.
+	 *
+	 * @type {Object|undefined}
+	 */
+	const registryDskapi = window.wc && window.wc.wcBlocksRegistry;
 
-  /**
-   * Function to register payment method extension callbacks.
-   *
-   * @type {Function|undefined}
-   */
-  const registerDskapiPaymentMethodExtensionCallbacks =
-    registryDskapi &&
-    registryDskapi.registerDskapiPaymentMethodExtensionCallbacks;
+	/**
+	 * Function to register payment method extension callbacks.
+	 *
+	 * @type {Function|undefined}
+	 */
+	const registerDskapiPaymentMethodExtensionCallbacks =
+	registryDskapi &&
+	registryDskapi.registerDskapiPaymentMethodExtensionCallbacks;
 
-  // Exit if the registration function is not available
-  if (typeof registerDskapiPaymentMethodExtensionCallbacks !== "function") {
-    return;
-  }
+	// Exit if the registration function is not available
+	if (typeof registerDskapiPaymentMethodExtensionCallbacks !== "function") {
+		return;
+	}
 
-  /**
-   * Register extension callbacks to filter available payment methods.
-   * Only shows the payment method matching the URL parameter.
-   */
-  registerDskapiPaymentMethodExtensionCallbacks("dskapipayment/ext", {
-    "*": (methodId) => ({
-      canMakePayment: () => {
-        if (!wantedDskapi) return true;
-        return methodId === wantedDskapi;
-      },
-    }),
-  });
+	/**
+	 * Register extension callbacks to filter available payment methods.
+	 * Only shows the payment method matching the URL parameter.
+	 */
+	registerDskapiPaymentMethodExtensionCallbacks(
+		"dskapipayment/ext",
+		{
+			"*": (methodId) => ({
+				canMakePayment: () => {
+					if ( ! wantedDskapi) {
+						return true;
+					}
+					return methodId === wantedDskapi;
+				},
+			}),
+		}
+	);
 })();
