@@ -134,6 +134,25 @@ class Dskapi_Cache {
 	}
 
 	/**
+	 * Delete all rows from the calculation cache table.
+	 *
+	 * @return int Number of rows removed.
+	 */
+	public static function flush_all() {
+		global $wpdb;
+
+		$table = self::table_name();
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from prefix + constant.
+		$count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from prefix + constant.
+		$wpdb->query( "TRUNCATE TABLE {$table}" );
+
+		return $count;
+	}
+
+	/**
 	 * Delete all cache rows for a calculator ID.
 	 *
 	 * @param string $cid Calculator ID.

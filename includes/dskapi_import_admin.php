@@ -18,6 +18,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+$dskapi_cache_cleared_count = null;
+
+/**
+ * Clear all installment calculation cache (admin action).
+ */
+if ( isset( $_POST['dskapi_clear_cache'] ) ) {
+	check_admin_referer( 'dskapi_clear_cache', 'dskapi_clear_cache_nonce' );
+
+	if ( current_user_can( 'manage_options' ) ) {
+		$dskapi_cache_cleared_count = Dskapi_Cache::flush_all();
+	}
+}
+
 /**
  * Process form submission and save settings.
  *
@@ -27,7 +40,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - dskapi_reklama: Advertisement toggle
  * - dskapi_gap: Button top margin in pixels
  */
-if ( array_key_exists( 'dskapi_hidden', $_POST ) && $_POST['dskapi_hidden'] == 'Y' ) {
+if ( array_key_exists( 'dskapi_hidden', $_POST ) && 'Y' === $_POST['dskapi_hidden'] && ! isset( $_POST['dskapi_clear_cache'] ) ) {
 	// Process plugin status (on/off)
 	if ( array_key_exists( 'dskapi_status', $_POST ) ) {
 		$dskapi_status = sanitize_text_field( $_POST['dskapi_status'] );
@@ -80,7 +93,24 @@ if ( array_key_exists( 'dskapi_hidden', $_POST ) && $_POST['dskapi_hidden'] == '
 <!-- Admin Settings Form -->
 <div class="wrap">
 	<h2>DSK Credit API - всички настройки на модула</h2>
-	<form name="dskapi_form" method="post" enctype="multipart/form-data" action="<?php echo esc_url( $_SERVER['REQUEST_URI'] ); ?>">
+	<?php if ( null !== $dskapi_cache_cleared_count ) : ?>
+		<div class="updated">
+			<p>
+				<strong>
+					<?php
+					echo esc_html(
+						sprintf(
+							/* translators: %d: number of deleted cache rows */
+							'Кешът е изчистен. Премахнати са %d записа.',
+							$dskapi_cache_cleared_count
+						)
+					);
+					?>
+				</strong>
+			</p>
+		</div>
+	<?php endif; ?>
+	<form name="dskapi_form" method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'options-general.php?page=dskapi-options' ) ); ?>">
 		<!-- Hidden field to identify form submission -->
 		<input type="hidden" name="dskapi_hidden" value="Y">
 
@@ -92,7 +122,7 @@ if ( array_key_exists( 'dskapi_hidden', $_POST ) && $_POST['dskapi_hidden'] == '
 					DSK Credit API покупки на Кредит
 				</td>
 				<td width="600px;" style="vertical-align:top;">
-					<input type="checkbox" class="checkbox" id="dskapi_status" name="dskapi_status" 
+					<input type="checkbox" class="checkbox" id="dskapi_status" name="dskapi_status"
 					<?php
 					if ( $dskapi_status == 'on' ) {
 																										echo 'checked';
@@ -120,7 +150,7 @@ if ( array_key_exists( 'dskapi_hidden', $_POST ) && $_POST['dskapi_hidden'] == '
 					Визуализиране на реклама
 				</td>
 				<td width="600px;" style="vertical-align:top;">
-					<input type="checkbox" class="checkbox" id="dskapi_reklama" name="dskapi_reklama" 
+					<input type="checkbox" class="checkbox" id="dskapi_reklama" name="dskapi_reklama"
 					<?php
 					if ( $dskapi_reklama == 'on' ) {
 																											echo 'checked';
@@ -147,6 +177,15 @@ if ( array_key_exists( 'dskapi_hidden', $_POST ) && $_POST['dskapi_hidden'] == '
 		<!-- Submit Button -->
 		<p class="submit">
 			<input type="submit" name="Submit" class="button button-primary" value="Запиши промените" />
+			<?php wp_nonce_field( 'dskapi_clear_cache', 'dskapi_clear_cache_nonce' ); ?>
+			<input
+				type="submit"
+				name="dskapi_clear_cache"
+				class="button button-secondary"
+				value="Изтрий кешираните данни"
+				style="margin-left: 8px;"
+				onclick="return confirm('Сигурни ли сте, че искате да изтриете всички кеширани изчисления за вноски?');"
+			/>
 		</p>
 	</form>
 </div>
