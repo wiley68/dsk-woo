@@ -27,11 +27,6 @@ class Dskapi_Calc {
 	}
 
 	/**
-	 * Localize script data for frontend requests.
-	 *
-	 * @return array<string, string>
-	 */
-	/**
 	 * AJAX: return installment calculation (same JSON shape as DSK API).
 	 *
 	 * @return void
@@ -43,15 +38,15 @@ class Dskapi_Calc {
 			self::send_error_response();
 		}
 
-		$cid = isset( $_GET['cid'] ) ? sanitize_text_field( wp_unslash( $_GET['cid'] ) ) : '';
+		$cid = isset( $_POST['cid'] ) ? sanitize_text_field( wp_unslash( $_POST['cid'] ) ) : '';
 
 		if ( $cid === '' || $cid !== Dskapi_Client::get_cid() ) {
 			self::send_error_response();
 		}
 
-		$product_id   = isset( $_GET['product_id'] ) ? absint( $_GET['product_id'] ) : 0;
-		$installments = isset( $_GET['dskapi_vnoski'] ) ? absint( $_GET['dskapi_vnoski'] ) : 0;
-		$price_raw    = isset( $_GET['price'] ) ? wp_unslash( $_GET['price'] ) : '';
+		$product_id   = isset( $_POST['product_id'] ) ? absint( $_POST['product_id'] ) : 0;
+		$installments = isset( $_POST['dskapi_vnoski'] ) ? absint( $_POST['dskapi_vnoski'] ) : 0;
+		$price_raw    = isset( $_POST['price'] ) ? wp_unslash( $_POST['price'] ) : '';
 
 		if ( $product_id <= 0 || $installments < 3 || $installments > 48 ) {
 			self::send_error_response();

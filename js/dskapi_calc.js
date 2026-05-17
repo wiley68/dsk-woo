@@ -54,7 +54,7 @@ function dskapiFetchProductCustom(params, onComplete) {
 
 	dskapiGetNonce()
 		.then((nonce) => {
-			const query = new URLSearchParams({
+			const body = new URLSearchParams({
 				action: "dskapi_get_product_custom",
 				nonce: nonce,
 				cid: params.cid,
@@ -64,17 +64,17 @@ function dskapiFetchProductCustom(params, onComplete) {
 			});
 
 			const xhr = new XMLHttpRequest();
-			xhr.open(
-				"GET",
-				dskapi_ajax_vars.ajax_url + "?" + query.toString(),
-				true,
+			xhr.open("POST", dskapi_ajax_vars.ajax_url, true);
+			xhr.setRequestHeader(
+				"Content-Type",
+				"application/x-www-form-urlencoded",
 			);
 			xhr.onreadystatechange = function () {
 				if (xhr.readyState === 4) {
 					onComplete(xhr);
 				}
 			};
-			xhr.send();
+			xhr.send(body.toString());
 		})
 		.catch((error) => {
 			console.error("DSKAPI:", error);
