@@ -4,7 +4,7 @@
  * Plugin Name: Банка ДСК покупки на Кредит
  * Plugin URI: https://avalonbg.com
  * Description: Дава възможност на Вашите клиенти да закупуват стока на изплащане с Банка ДСК
- * Version: 1.2.1
+ * Version: 1.2.2
  * Author: Avalon Ltd
  * Author URI: https://avalonbg.com
  * Owner: Банка ДСК
@@ -50,8 +50,8 @@ if ( ! dskapi_is_woocommerce_active() ) {
 }
 
 /** Plugin constants */
-define( 'DSKAPI_VERSION', '1.2.1' );
-define( 'DSKAPI_DB_VERSION', '1.0.1' );
+define( 'DSKAPI_VERSION', '1.2.2' );
+define( 'DSKAPI_DB_VERSION', '1.0.2' );
 define( 'DSKAPI_PLUGIN_FILE', __FILE__ );
 define( 'DSKAPI_PLUGIN_DIR', untrailingslashit( __DIR__ ) );
 define( 'DSKAPI_PLUGIN_URL', untrailingslashit( plugin_dir_url( __FILE__ ) ) );
@@ -64,14 +64,27 @@ define( 'DSKAPI_MAIL', 'home@avalonbg.com' );
 
 /** includes */
 $dskapi_files = array(
+	'/class-dskapi-cache.php',
 	'/class-dskapi-client.php',
 	'/class-dskapi-orders.php',
+	'/class-dskapi-ajax.php',
+	'/class-dskapi-calc.php',
 	'/functions.php',
 	'/admin.php',
 );
 foreach ( $dskapi_files as $file ) {
 	require_once DSKAPI_INCLUDES_DIR . $file;
 }
+
+register_activation_hook(
+	DSKAPI_PLUGIN_FILE,
+	function () {
+		if ( ! dskapi_is_woocommerce_active() ) {
+			return;
+		}
+		dskapi_create_tables();
+	}
+);
 
 // Declare WooCommerce compatibility (must be before plugins_loaded)
 add_action( 'before_woocommerce_init', 'dskapi_declare_woocommerce_compatibility' );
@@ -132,6 +145,10 @@ function dskapi_plugin_bootstrap() {
 	/** refresh cart button via AJAX ###includes/functions.php### */
 	add_action( 'wp_ajax_dskapi_refresh_cart_button', 'dskapi_refresh_cart_button' );
 	add_action( 'wp_ajax_nopriv_dskapi_refresh_cart_button', 'dskapi_refresh_cart_button' );
+
+	/** storefront AJAX (nonce + calc) ###includes/class-dskapi-ajax.php### */
+	Dskapi_Ajax::init();
+	Dskapi_Calc::init();
 }
 
 /**

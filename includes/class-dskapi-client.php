@@ -234,6 +234,69 @@ class Dskapi_Client {
 	}
 
 	/**
+	 * Get custom installment calculation (with DB cache).
+	 *
+	 * @param string|float $price        Product price (normalized server-side).
+	 * @param int          $product_id   Product ID.
+	 * @param int          $installments Installment count (3–48).
+	 * @param string|null  $cid          Calculator ID.
+	 * @return array|null API response array or null if unavailable.
+	 */
+	public static function get_product_custom( $price, $product_id, $installments, $cid = null ) {
+		$cid          = $cid ?? self::get_cid();
+		$product_id   = absint( $product_id );
+		$installments = absint( $installments );
+		$price        = number_format( (float) $price, 2, '.', '' );
+
+		if ( $product_id <= 0 || $installments < 3 || $installments > 48 || (float) $price <= 0 ) {
+			return null;
+		}
+
+		$cache_key = Dskapi_Cache::build_cache_key( $cid, $product_id, $price, $installments );
+
+		$cached = Dskapi_Cache::get_fresh( $cache_key );
+		if ( null !== $cached ) {
+			return $cached;
+		}
+
+		$response = self::get(
+			'/function/getproductcustom.php',
+			array(
+				'cid'           => $cid,
+				'price'         => $price,
+				'product_id'    => $product_id,
+				'dskapi_vnoski' => $installments,
+			)
+		);
+
+		if ( self::is_valid_product_custom_response( $response ) ) {
+			Dskapi_Cache::set( $cache_key, $cid, $product_id, $price, $installments, $response );
+			return $response;
+		}
+
+		$stale = Dskapi_Cache::get_stale( $cache_key );
+		if ( null !== $stale ) {
+			return $stale;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Whether getproductcustom response contains required fields.
+	 *
+	 * @param mixed $response Decoded API response.
+	 * @return bool
+	 */
+	public static function is_valid_product_custom_response( $response ) {
+		return is_array( $response )
+			&& array_key_exists( 'dsk_is_visible', $response )
+			&& array_key_exists( 'dsk_options', $response )
+			&& array_key_exists( 'dsk_vnoska', $response )
+			&& array_key_exists( 'dsk_gpr', $response );
+	}
+
+	/**
 	 * Submit order to DSK API.
 	 *
 	 * @param array $data Encrypted order data.

@@ -270,6 +270,31 @@ namespace {
     }
 
     /**
+     * Retrieves the current time based on the WordPress timezone setting.
+     *
+     * @param string $type    Time type: mysql, timestamp, or PHP date format.
+     * @param bool   $gmt     Whether to use GMT.
+     * @return int|string Current time.
+     */
+    function current_time($type, $gmt = false)
+    {
+        return $gmt ? gmdate('Y-m-d H:i:s') : date('Y-m-d H:i:s');
+    }
+
+    /**
+     * Encodes a variable into JSON, with sanity checks.
+     *
+     * @param mixed $data    Variable to encode.
+     * @param int   $options json_encode() options.
+     * @param int   $depth   Maximum depth.
+     * @return string|false JSON string or false on failure.
+     */
+    function wp_json_encode($data, $options = 0, $depth = 512)
+    {
+        return json_encode($data, $options, $depth);
+    }
+
+    /**
      * Retrieves the URL to the admin area.
      *
      * @param string $path Optional path relative to the admin URL.
@@ -537,6 +562,8 @@ namespace {
     // ============================================================================
 
     define('ABSPATH', '/');
+    define('ARRAY_A', 'ARRAY_A');
+    define('ARRAY_N', 'ARRAY_N');
     /** @var bool WordPress debug mode - value varies by environment */
     const WP_DEBUG = true;
     define('WP_CONTENT_URL', '');

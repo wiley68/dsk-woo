@@ -48,6 +48,7 @@ function dskapi_load_class_plugin() {
  *
  * Creates the following tables:
  * - {prefix}dskpayment_orders: Stores DSK payment order statuses
+ * - {prefix}dskapi_calc_cache: Cached getproductcustom API responses
  *
  * @since 1.2.0
  * @return void
@@ -60,6 +61,7 @@ function dskapi_create_tables() {
 	}
 
 	$table_orders_name = $wpdb->prefix . 'dskpayment_orders';
+	$table_cache_name  = $wpdb->prefix . Dskapi_Cache::TABLE;
 	$charset_collate   = $wpdb->get_charset_collate();
 
 	$sql_orders = "CREATE TABLE $table_orders_name (
@@ -73,7 +75,26 @@ function dskapi_create_tables() {
         KEY `order_status` (`order_status`)
 	) $charset_collate;";
 
+	$sql_cache = "CREATE TABLE $table_cache_name (
+		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+		cache_key varchar(64) NOT NULL,
+		cid varchar(64) NOT NULL,
+		product_id bigint(20) unsigned NOT NULL DEFAULT 0,
+		price decimal(12,2) NOT NULL,
+		installments smallint(5) unsigned NOT NULL,
+		response_json longtext NOT NULL,
+		created_at datetime NOT NULL,
+		expires_at datetime NOT NULL,
+		PRIMARY KEY (id),
+		UNIQUE KEY cache_key (cache_key),
+		KEY expires_at (expires_at),
+		KEY cid (cid)
+	) $charset_collate;";
+
 	dbDelta( $sql_orders );
+	dbDelta( $sql_cache );
+
+	Dskapi_Cache::purge_expired();
 
 	update_option( 'dskapi_db_version', DSKAPI_DB_VERSION );
 }
@@ -207,6 +228,8 @@ function dskapi_cart_fragments( $fragments ) {
  * @return void Outputs JSON and exits.
  */
 function dskapi_refresh_cart_button() {
+	Dskapi_Ajax::verify_nonce();
+
 	ob_start();
 	dskpayment_cart_button();
 	$html = ob_get_clean();
@@ -371,12 +394,17 @@ function dskapi_add_meta() {
 		wp_enqueue_script( 'dskapi_js_rek', DSKAPI_JS_URI . '/dskapi_rek.js', array(), filemtime( $js_file ), true );
 	}
 
+	$calc_js_file = DSKAPI_PLUGIN_DIR . '/js/dskapi_calc.js';
+	$calc_deps    = array( 'dskapi_js_calc' );
+
 	if ( is_product() ) {
 		$css_file = DSKAPI_PLUGIN_DIR . '/css/dskapi.css';
 		$js_file  = DSKAPI_PLUGIN_DIR . '/js/dskapi_product.js';
 
 		wp_enqueue_style( 'dskapi_style_product', DSKAPI_CSS_URI . '/dskapi.css', array(), filemtime( $css_file ), 'all' );
-		wp_enqueue_script( 'dskapi_js_product', DSKAPI_JS_URI . '/dskapi_product.js', array(), filemtime( $js_file ), true );
+		wp_enqueue_script( 'dskapi_js_calc', DSKAPI_JS_URI . '/dskapi_calc.js', array(), filemtime( $calc_js_file ), true );
+		wp_localize_script( 'dskapi_js_calc', 'dskapi_ajax_vars', Dskapi_Ajax::get_script_vars() );
+		wp_enqueue_script( 'dskapi_js_product', DSKAPI_JS_URI . '/dskapi_product.js', $calc_deps, filemtime( $js_file ), true );
 	}
 
 	if ( is_cart() ) {
@@ -384,17 +412,9 @@ function dskapi_add_meta() {
 		$js_file  = DSKAPI_PLUGIN_DIR . '/js/dskapi_cart.js';
 
 		wp_enqueue_style( 'dskapi_style_cart', DSKAPI_CSS_URI . '/dskapi.css', array(), filemtime( $css_file ), 'all' );
-		wp_enqueue_script( 'dskapi_js_cart', DSKAPI_JS_URI . '/dskapi_cart.js', array( 'jquery' ), filemtime( $js_file ), true );
-
-		// Pass AJAX URL and nonce to JavaScript
-		wp_localize_script(
-			'dskapi_js_cart',
-			'dskapi_cart_vars',
-			array(
-				'ajax_url' => admin_url( 'admin-ajax.php' ),
-				'nonce'    => wp_create_nonce( 'dskapi_cart_nonce' ),
-			)
-		);
+		wp_enqueue_script( 'dskapi_js_calc', DSKAPI_JS_URI . '/dskapi_calc.js', array(), filemtime( $calc_js_file ), true );
+		wp_localize_script( 'dskapi_js_calc', 'dskapi_ajax_vars', Dskapi_Ajax::get_script_vars() );
+		wp_enqueue_script( 'dskapi_js_cart', DSKAPI_JS_URI . '/dskapi_cart.js', array_merge( array( 'jquery' ), $calc_deps ), filemtime( $js_file ), true );
 	}
 
 	if ( is_checkout() ) {
@@ -402,7 +422,9 @@ function dskapi_add_meta() {
 		$js_file  = DSKAPI_PLUGIN_DIR . '/js/dskapi_checkout.js';
 
 		wp_enqueue_style( 'dskapi_style_checkout', DSKAPI_CSS_URI . '/dskapi.css', array(), filemtime( $css_file ), 'all' );
-		wp_enqueue_script( 'dskapi_js_checkout', DSKAPI_JS_URI . '/dskapi_checkout.js', array(), filemtime( $js_file ), true );
+		wp_enqueue_script( 'dskapi_js_calc', DSKAPI_JS_URI . '/dskapi_calc.js', array(), filemtime( $calc_js_file ), true );
+		wp_localize_script( 'dskapi_js_calc', 'dskapi_ajax_vars', Dskapi_Ajax::get_script_vars() );
+		wp_enqueue_script( 'dskapi_js_checkout', DSKAPI_JS_URI . '/dskapi_checkout.js', $calc_deps, filemtime( $js_file ), true );
 	}
 }
 

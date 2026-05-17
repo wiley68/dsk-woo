@@ -29,10 +29,10 @@ let old_vnoski_checkout;
 function createCORSRequestCheckout(method, url) {
 	let xhr = new XMLHttpRequest();
 	if ("withCredentials" in xhr) {
-		xhr.open( method, url, true );
+		xhr.open(method, url, true);
 	} else if (typeof XDomainRequest != "undefined") {
 		xhr = new XDomainRequest();
-		xhr.open( method, url );
+		xhr.open(method, url);
 	} else {
 		xhr = null;
 	}
@@ -69,105 +69,89 @@ function dskapi_checkout_vnoski_input_focus(_old_vnoski) {
  */
 function dskapi_checkout_vnoski_input_change() {
 	// Get all required DOM elements
-	const priceEl     = document.getElementById( "dskapi_checkout_price_txt" );
-	const vnoskaEl    = document.getElementById( "dskapi_checkout_vnoska" );
-	const obshtoEl    = document.getElementById( "dskapi_checkout_obshtozaplashtane" );
-	const gprEl       = document.getElementById( "dskapi_checkout_gpr" );
-	const selectEl    = document.getElementById( "dskapi_checkout_vnoski_input" );
-	const cidEl       = document.getElementById( "dskapi_checkout_cid" );
-	const productIdEl = document.getElementById( "dskapi_checkout_product_id" );
-	const liveurlEl   = document.getElementById( "DSKAPI_CHECKOUT_LIVEURL" );
+	const priceEl = document.getElementById("dskapi_checkout_price_txt");
+	const vnoskaEl = document.getElementById("dskapi_checkout_vnoska");
+	const obshtoEl = document.getElementById(
+		"dskapi_checkout_obshtozaplashtane",
+	);
+	const gprEl = document.getElementById("dskapi_checkout_gpr");
+	const selectEl = document.getElementById("dskapi_checkout_vnoski_input");
+	const cidEl = document.getElementById("dskapi_checkout_cid");
+	const productIdEl = document.getElementById("dskapi_checkout_product_id");
 
 	// Validate all required elements exist
-	if ( ! priceEl || ! selectEl || ! cidEl || ! liveurlEl || ! productIdEl) {
+	if (!priceEl || !selectEl || !cidEl || !productIdEl) {
 		return;
 	}
 
 	// Extract values for API request
-	const dskapi_price      = parseFloat( priceEl.value );
-	const dskapi_vnoski     = parseFloat( selectEl.value );
-	const dskapi_cid        = cidEl.value;
+	const dskapi_price = parseFloat(priceEl.value);
+	const dskapi_vnoski = parseFloat(selectEl.value);
+	const dskapi_cid = cidEl.value;
 	const dskapi_product_id = productIdEl.value;
-	const DSKAPI_LIVEURL    = liveurlEl.value;
 
-	// Build and send API request
-	const xhr = createCORSRequestCheckout(
-		"GET",
-		DSKAPI_LIVEURL +
-		"/function/getproductcustom.php?cid=" +
-		dskapi_cid +
-		"&price=" +
-		dskapi_price +
-		"&product_id=" +
-		dskapi_product_id +
-		"&dskapi_vnoski=" +
-		dskapi_vnoski
-	);
+	dskapiFetchProductCustom(
+		{
+			cid: dskapi_cid,
+			price: dskapi_price,
+			product_id: dskapi_product_id,
+			dskapi_vnoski: dskapi_vnoski,
+		},
+		function (xhr) {
+			if (xhr.status !== 200) {
+				console.error(
+					"DSKAPI Checkout: calculation request failed",
+					xhr.status,
+				);
+				return;
+			}
 
-	if ( ! xhr) {
-		console.error( "CORS not supported" );
-		return;
-	}
-
-	/**
-	 * Handle API response.
-	 * Updates UI elements with new values or shows validation error.
-	 */
-	xhr.onreadystatechange = function () {
-		if (this.readyState == 4) {
 			try {
-				const response       = JSON.parse( this.responseText );
-				const options        = response.dsk_options;
-				const dsk_vnoska     = parseFloat( response.dsk_vnoska );
-				const dsk_gpr        = parseFloat( response.dsk_gpr );
+				const response = JSON.parse(xhr.responseText);
+				const options = response.dsk_options;
+				const dsk_vnoska = parseFloat(response.dsk_vnoska);
+				const dsk_gpr = parseFloat(response.dsk_gpr);
 				const dsk_is_visible = response.dsk_is_visible;
 
 				if (dsk_is_visible) {
 					if (options) {
 						// Update popup display fields
 						if (vnoskaEl) {
-							vnoskaEl.value = dsk_vnoska.toFixed( 2 );
+							vnoskaEl.value = dsk_vnoska.toFixed(2);
 						}
 						if (obshtoEl) {
-							obshtoEl.value = (dsk_vnoska * dskapi_vnoski).toFixed( 2 );
+							obshtoEl.value = (
+								dsk_vnoska * dskapi_vnoski
+							).toFixed(2);
 						}
 						if (gprEl) {
-								gprEl.value = dsk_gpr.toFixed( 2 );
+							gprEl.value = dsk_gpr.toFixed(2);
 						}
 
 						// Store new value as current for future rollbacks
 						old_vnoski_checkout = dskapi_vnoski;
 					} else {
 						// Installments below minimum - show error and revert
-						alert( "Избраният брой погасителни вноски е под минималния." );
+						alert(
+							"Избраният брой погасителни вноски е под минималния.",
+						);
 						selectEl.value = old_vnoski_checkout;
 					}
 				} else {
 					// Installments above maximum - show error and revert
-					alert( "Избраният брой погасителни вноски е над максималния." );
+					alert(
+						"Избраният брой погасителни вноски е над максималния.",
+					);
 					selectEl.value = old_vnoski_checkout;
 				}
 			} catch (e) {
-				console.error( "DSKAPI Checkout: Error parsing response", e );
+				console.error("DSKAPI Checkout: Error parsing response", e);
 				if (selectEl) {
 					selectEl.value = old_vnoski_checkout;
 				}
 			}
-		}
-	};
-
-	/**
-	 * Handle request error.
-	 * Reverts to previous installment value.
-	 */
-	xhr.onerror = function () {
-		console.error( "Request failed" );
-		if (selectEl) {
-			selectEl.value = old_vnoski_checkout;
-		}
-	};
-
-	xhr.send();
+		},
+	);
 }
 
 /**
@@ -180,11 +164,11 @@ function dskapi_checkout_vnoski_input_change() {
  * @returns {void}
  */
 function dskapiCheckoutOpenPopup() {
-	const popup = document.getElementById( "dskapi-checkout-popup-container" );
+	const popup = document.getElementById("dskapi-checkout-popup-container");
 	if (popup) {
 		// Move popup to body to avoid WooCommerce container restrictions
 		if (popup.parentElement !== document.body) {
-			document.body.appendChild( popup );
+			document.body.appendChild(popup);
 		}
 		popup.style.display = "block";
 	}
@@ -196,7 +180,7 @@ function dskapiCheckoutOpenPopup() {
  * @returns {void}
  */
 function dskapiCheckoutClosePopup() {
-	const popup = document.getElementById( "dskapi-checkout-popup-container" );
+	const popup = document.getElementById("dskapi-checkout-popup-container");
 	if (popup) {
 		popup.style.display = "none";
 	}
@@ -212,26 +196,23 @@ function dskapiCheckoutClosePopup() {
  *
  * @listens document#click
  */
-document.addEventListener(
-	"click",
-	function (e) {
-		// Open popup on interest rates link click
-		if (e.target && e.target.id === "dskapi_checkout_interest_rates_link") {
-			e.preventDefault();
-			dskapiCheckoutOpenPopup();
-		}
-
-		// Close popup on close button click
-		if (e.target && e.target.id === "dskapi_checkout_close_popup") {
-			dskapiCheckoutClosePopup();
-		}
-
-		// Close popup on overlay click (outside popup content)
-		if (e.target && e.target.id === "dskapi-checkout-popup-container") {
-			dskapiCheckoutClosePopup();
-		}
+document.addEventListener("click", function (e) {
+	// Open popup on interest rates link click
+	if (e.target && e.target.id === "dskapi_checkout_interest_rates_link") {
+		e.preventDefault();
+		dskapiCheckoutOpenPopup();
 	}
-);
+
+	// Close popup on close button click
+	if (e.target && e.target.id === "dskapi_checkout_close_popup") {
+		dskapiCheckoutClosePopup();
+	}
+
+	// Close popup on overlay click (outside popup content)
+	if (e.target && e.target.id === "dskapi-checkout-popup-container") {
+		dskapiCheckoutClosePopup();
+	}
+});
 
 /**
  * Keyboard event listener for popup.
@@ -241,11 +222,8 @@ document.addEventListener(
  *
  * @listens document#keydown
  */
-document.addEventListener(
-	"keydown",
-	function (e) {
-		if (e.key === "Escape") {
-			dskapiCheckoutClosePopup();
-		}
+document.addEventListener("keydown", function (e) {
+	if (e.key === "Escape") {
+		dskapiCheckoutClosePopup();
 	}
-);
+});

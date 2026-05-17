@@ -45,12 +45,14 @@ foreach ( $options as $option ) {
  * @var string $table_orders_name Full table name with prefix.
  */
 $table_orders_name = $wpdb->prefix . 'dskpayment_orders';
+$table_cache_name  = $wpdb->prefix . 'dskapi_calc_cache';
 
 /**
  * Drop the custom orders table.
  * Uses IF EXISTS to prevent errors if table doesn't exist.
  */
 $wpdb->query( "DROP TABLE IF EXISTS $table_orders_name;" );
+$wpdb->query( "DROP TABLE IF EXISTS $table_cache_name;" );
 
 /**
  * Clear any cached data related to the removed options and tables.
