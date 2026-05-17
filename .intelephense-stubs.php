@@ -381,6 +381,28 @@ namespace {
     }
 
     /**
+     * WordPress-specific version of parse_url() with UTF-8 support.
+     *
+     * @param string              $url       The URL to parse.
+     * @param int                 $component PHP_URL_* component to retrieve.
+     * @param array<string>|false $fallback  Fallback when parse fails.
+     * @return array<string, mixed>|string|int|null|false
+     */
+    function wp_parse_url($url, $component = -1, $fallback = '')
+    {
+        return parse_url($url, $component);
+    }
+
+    /**
+     * Set HTTP status header.
+     *
+     * @param int    $code        Status code.
+     * @param string $description Optional description.
+     * @return void
+     */
+    function status_header($code, $description = '') {}
+
+    /**
      * Sends a JSON response and terminates execution.
      *
      * @param mixed $response    Data to encode as JSON.

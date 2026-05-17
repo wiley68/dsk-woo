@@ -68,6 +68,7 @@ $dskapi_files = array(
 	'/class-dskapi-client.php',
 	'/class-dskapi-orders.php',
 	'/class-dskapi-ajax.php',
+	'/class-dskapi-cp-api.php',
 	'/class-dskapi-calc.php',
 	'/functions.php',
 	'/admin.php',
@@ -149,6 +150,9 @@ function dskapi_plugin_bootstrap() {
 	/** storefront AJAX (nonce + calc) ###includes/class-dskapi-ajax.php### */
 	Dskapi_Ajax::init();
 	Dskapi_Calc::init();
+
+	/** Control Panel API (cache purge, etc.) ###includes/class-dskapi-cp-api.php### */
+	Dskapi_Cp_Api::init();
 }
 
 /**
