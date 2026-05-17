@@ -176,9 +176,10 @@ class Dskapi_Payment_Gateway extends WC_Payment_Gateway {
 		}
 
 		// Apply currency conversion to order total
-		$dskapi_eur = (int) $paramsdskapi['dsk_eur'];
+		$dskapi_eur        = (int) $paramsdskapi['dsk_eur'];
+		$dsk_order_total   = 0.0;
 		if ( WC()->cart ) {
-			$dsk_order_total = $this->get_order_total();
+			$dsk_order_total = (float) $this->get_order_total();
 			switch ( $dskapi_eur ) {
 				case 0:
 					// No conversion
@@ -212,14 +213,12 @@ class Dskapi_Payment_Gateway extends WC_Payment_Gateway {
 		}
 
 		// Validate order total against limits
-		if ( WC()->cart ) {
-			if ( $dsk_order_total > 0 ) {
-				if ( ( $dskapi_status_cp != 1 ) ||
-					( $dsk_order_total < $dskapi_minstojnost ) ||
-					( $dsk_order_total > $dskapi_maxstojnost )
-				) {
-					$is_available = false;
-				}
+		if ( WC()->cart && $dsk_order_total > 0 ) {
+			if ( ( $dskapi_status_cp != 1 ) ||
+				( $dsk_order_total < $dskapi_minstojnost ) ||
+				( $dsk_order_total > $dskapi_maxstojnost )
+			) {
+				$is_available = false;
 			}
 		}
 
