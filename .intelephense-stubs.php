@@ -810,6 +810,22 @@ namespace {
     }
 
     /**
+     * @return bool
+     */
+    function dskapi_is_block_cart()
+    {
+        return false;
+    }
+
+    /**
+     * @return string
+     */
+    function dskapi_get_cart_button_html()
+    {
+        return '';
+    }
+
+    /**
      * Clean variables using sanitize_text_field.
      * Arrays are cleaned recursively.
      *
@@ -945,10 +961,6 @@ namespace {
         public function __construct() {}
         public function init_form_fields() {}
         public function init_settings() {}
-        public function get_option($key, $empty_value = null)
-        {
-            return '';
-        }
         public function get_title()
         {
             return $this->title;
@@ -1017,12 +1029,28 @@ namespace {
 
         public function init_form_fields() {}
         public function init_settings() {}
+        /**
+         * @param string $key
+         * @param mixed  $empty_value
+         * @return mixed
+         */
         public function get_option($key, $empty_value = null)
         {
-            return '';
+            if (isset($this->settings[ $key ])) {
+                return $this->settings[ $key ];
+            }
+
+            return null !== $empty_value ? $empty_value : '';
         }
-        public function update_option($key, $value = '')
-        {
+
+        /**
+         * @param string $key
+         * @param mixed  $value
+         * @return bool
+         */
+        public function update_option( $key, $value = '' ) {
+            $this->settings[ $key ] = $value;
+
             return true;
         }
         public function process_admin_options()
@@ -1170,16 +1198,6 @@ namespace {
         {
             return false;
         }
-        public function get_meta($key = '', $single = true, $context = 'view')
-        {
-            return null;
-        }
-        public function update_meta_data($key, $value, $id = 0) {}
-        public function delete_meta_data($key) {}
-        public function save()
-        {
-            return 0;
-        }
     }
 
     // ============================================================================
@@ -1194,19 +1212,82 @@ namespace {
 
     abstract class WC_Data
     {
+        /**
+         * @var array<int, array{key: string, value: mixed, id: int}>
+         */
+        protected $meta_data = array();
+
         public function get_id()
         {
             return 0;
         }
-        public function get_meta($key = '', $single = true, $context = 'view')
-        {
+
+        /**
+         * @param string $key
+         * @param bool   $single
+         * @param string $context
+         * @return mixed
+         */
+        public function get_meta( $key = '', $single = true, $context = 'view' ) {
+            unset( $single, $context );
+
+            if ( '' === $key ) {
+                return $this->meta_data;
+            }
+
+            foreach ( $this->meta_data as $meta ) {
+                if ( isset( $meta['key'] ) && $meta['key'] === $key ) {
+                    return $meta['value'] ?? null;
+                }
+            }
+
             return null;
         }
-        public function update_meta_data($key, $value, $id = 0) {}
-        public function add_meta_data($key, $value, $unique = false) {}
-        public function delete_meta_data($key) {}
-        public function save()
-        {
+
+        /**
+         * @param string $key
+         * @param mixed  $value
+         * @param int    $id
+         * @return void
+         */
+        public function update_meta_data( $key, $value, $id = 0 ) {
+            $this->meta_data[] = array(
+                'key'   => $key,
+                'value' => $value,
+                'id'    => (int) $id,
+            );
+        }
+
+        /**
+         * @param string $key
+         * @param mixed  $value
+         * @param bool   $unique
+         * @return void
+         */
+        public function add_meta_data( $key, $value, $unique = false ) {
+            if ( $unique ) {
+                $this->delete_meta_data( $key );
+            }
+
+            $this->update_meta_data( $key, $value );
+        }
+
+        /**
+         * @param string $key
+         * @return void
+         */
+        public function delete_meta_data( $key ) {
+            foreach ( $this->meta_data as $index => $meta ) {
+                if ( isset( $meta['key'] ) && $meta['key'] === $key ) {
+                    unset( $this->meta_data[ $index ] );
+                }
+            }
+        }
+
+        /**
+         * @return int
+         */
+        public function save() {
             return 0;
         }
     }
@@ -1554,6 +1635,93 @@ namespace {
 // ============================================================================
 // WooCommerce Blocks - Namespaced Classes
 // ============================================================================
+
+namespace Automattic\WooCommerce\Blocks\Integrations {
+    interface IntegrationInterface
+    {
+        public function get_name();
+        public function initialize();
+        /**
+         * @return string[]
+         */
+        public function get_script_handles();
+        /**
+         * @return string[]
+         */
+        public function get_editor_script_handles();
+        /**
+         * @return array<string, mixed>
+         */
+        public function get_script_data();
+    }
+
+    class IntegrationRegistry
+    {
+        public function initialize($registry_identifier = '')
+        {
+            return true;
+        }
+
+        public function register(IntegrationInterface $integration)
+        {
+            return true;
+        }
+
+        public function is_registered($name)
+        {
+            return false;
+        }
+
+        /**
+         * @param string|IntegrationInterface $name
+         * @return bool|IntegrationInterface|null
+         */
+        public function unregister($name)
+        {
+            return false;
+        }
+
+        /**
+         * @return IntegrationInterface|null
+         */
+        public function get_registered($name)
+        {
+            return null;
+        }
+
+        /**
+         * @return IntegrationInterface[]
+         */
+        public function get_all_registered()
+        {
+            return [];
+        }
+
+        /**
+         * @return string[]
+         */
+        public function get_all_registered_editor_script_handles()
+        {
+            return [];
+        }
+
+        /**
+         * @return string[]
+         */
+        public function get_all_registered_script_handles()
+        {
+            return [];
+        }
+
+        /**
+         * @return array<string, array<string, mixed>>
+         */
+        public function get_all_registered_script_data()
+        {
+            return [];
+        }
+    }
+}
 
 namespace Automattic\WooCommerce\Blocks\Payments\Integrations {
     abstract class AbstractPaymentMethodType

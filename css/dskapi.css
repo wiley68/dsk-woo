@@ -345,3 +345,9 @@ input[type="text"].dskapi_mesecna_price {
 		width: 100%;
 	}
 }
+
+/* WooCommerce Cart block (Gutenberg) */
+.wc-block-cart #dskapi-cart-button-container {
+	width: 100%;
+	margin-top: 1em;
+}

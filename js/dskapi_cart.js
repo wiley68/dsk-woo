@@ -213,6 +213,40 @@ function dskapiCartGoToCheckout() {
  *
  * @returns {void}
  */
+/**
+ * Moves the cart popup to document.body so block themes cannot clip it.
+ *
+ * @returns {HTMLElement|null}
+ */
+function dskapiCartEnsurePopupInBody() {
+	const popup = document.getElementById("dskapi-cart-popup-container");
+	if (!popup) {
+		return null;
+	}
+
+	if (popup.parentNode !== document.body) {
+		document.body.appendChild(popup);
+	}
+
+	return popup;
+}
+
+/**
+ * Whether the click target is inside the DSK cart credit button area.
+ *
+ * @param {EventTarget|null} target Click target.
+ * @returns {boolean}
+ */
+function dskapiCartIsMainButtonClick(target) {
+	if (!target || typeof target.closest !== "function") {
+		return false;
+	}
+
+	return !!target.closest(
+		"#dskapi-cart-button-container .dskapi_btn_click, #dskapi-cart-button-container .dskapi_table_img, #dskapi-cart-button-container .dskapi_button_div_txt",
+	);
+}
+
 function dskapiCartButtonClick() {
 	const dskapi_button_status = parseInt(
 		document.getElementById("dskapi_cart_button_status")?.value || "0",
@@ -238,9 +272,7 @@ function dskapiCartButtonClick() {
 	// Validate price is within allowed range
 	if (dskapi_price <= maxPrice) {
 		// Show popup
-		const dskapiCartPopupContainer = document.getElementById(
-			"dskapi-cart-popup-container",
-		);
+		const dskapiCartPopupContainer = dskapiCartEnsurePopupInBody();
 		if (dskapiCartPopupContainer) {
 			dskapiCartPopupContainer.style.display = "block";
 		}
@@ -271,41 +303,57 @@ function dskapiCartClosePopup() {
 }
 
 /**
- * Global click event listener using event delegation.
+ * Global click listener (capture) for cart button and popup actions.
  *
- * Handles clicks for elements that may be dynamically loaded/replaced
- * after WooCommerce AJAX cart updates. Event delegation ensures handlers
- * work even after DOM elements are replaced.
- *
- * Handled elements:
- * - #btn_dskapi_cart: Main DSK credit button
- * - #dskapi_cart_buy_credit: Buy on credit button in popup
- * - #dskapi_cart_back_credit: Back/Cancel button in popup
+ * Capture phase runs before WooCommerce Cart block handlers that may
+ * stop propagation on bubble phase. Works with dynamically replaced markup.
  *
  * @listens document#click
  */
-document.addEventListener("click", function (e) {
-	// Main DSK cart button
-	if (e.target.closest("#btn_dskapi_cart")) {
-		e.preventDefault();
-		dskapiCartButtonClick();
-		return;
-	}
+document.addEventListener(
+	"click",
+	function (e) {
+		if (e.target.closest("#dskapi_cart_buy_credit")) {
+			e.preventDefault();
+			dskapiCartGoToCheckout();
+			return;
+		}
 
-	// Buy credit button in popup
-	if (e.target.closest("#dskapi_cart_buy_credit")) {
-		e.preventDefault();
-		dskapiCartGoToCheckout();
-		return;
-	}
+		if (e.target.closest("#dskapi_cart_back_credit")) {
+			e.preventDefault();
+			dskapiCartClosePopup();
+			return;
+		}
 
-	// Back/Cancel button in popup
-	if (e.target.closest("#dskapi_cart_back_credit")) {
-		e.preventDefault();
-		dskapiCartClosePopup();
-		return;
+		if (dskapiCartIsMainButtonClick(e.target)) {
+			e.preventDefault();
+			dskapiCartButtonClick();
+		}
+	},
+	true,
+);
+
+/**
+ * Installment select handlers (inline attributes are stripped in Cart block HTML).
+ */
+document.addEventListener("change", function (e) {
+	if (e.target && e.target.id === "dskapi_cart_pogasitelni_vnoski_input") {
+		dskapi_cart_pogasitelni_vnoski_input_change();
 	}
 });
+
+document.addEventListener(
+	"focus",
+	function (e) {
+		if (
+			e.target &&
+			e.target.id === "dskapi_cart_pogasitelni_vnoski_input"
+		) {
+			dskapi_cart_pogasitelni_vnoski_input_focus(e.target.value);
+		}
+	},
+	true,
+);
 
 /**
  * Refreshes the DSK cart button via AJAX.
@@ -377,4 +425,66 @@ if (typeof jQuery !== "undefined") {
 		// Cart was updated via AJAX - refresh DSK button with new totals
 		dskapiRefreshCartButton();
 	});
+}
+
+/**
+ * Refresh DSK button when WooCommerce Cart block updates totals via Store API.
+ */
+function dskapiInitBlockCartRefresh() {
+	if (!document.querySelector(".wp-block-woocommerce-cart")) {
+		return;
+	}
+
+	if (
+		typeof wp === "undefined" ||
+		!wp.data ||
+		typeof wp.data.subscribe !== "function"
+	) {
+		return;
+	}
+
+	let signature = "";
+	let debounceTimer = null;
+
+	wp.data.subscribe(() => {
+		try {
+			const cartStore = wp.data.select("wc/store/cart");
+			if (!cartStore || typeof cartStore.getCartData !== "function") {
+				return;
+			}
+
+			const cartData = cartStore.getCartData();
+			if (!cartData || !cartData.totals) {
+				return;
+			}
+
+			const nextSignature =
+				String(cartData.totals.total_price) +
+				":" +
+				String(cartData.items_count);
+
+			if (nextSignature === signature) {
+				return;
+			}
+
+			signature = nextSignature;
+
+			if (!document.getElementById("dskapi-cart-button-container")) {
+				return;
+			}
+
+			clearTimeout(debounceTimer);
+			debounceTimer = setTimeout(() => {
+				dskapiRefreshCartButton();
+			}, 300);
+		} catch (error) {
+			// Store not ready yet.
+		}
+	});
+}
+
+if (document.readyState === "loading") {
+	document.addEventListener("DOMContentLoaded", dskapiInitBlockCartRefresh);
+} else {
+	dskapiInitBlockCartRefresh();
 }

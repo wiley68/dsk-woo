@@ -134,6 +134,7 @@ function dskapi_plugin_bootstrap() {
 
 	// Registers a custom payment method type for WooCommerce Blocks
 	add_action( 'woocommerce_blocks_loaded', 'dskapi_register_order_approval_payment_method_type' );
+	add_action( 'woocommerce_blocks_loaded', 'dskapi_register_cart_blocks_integration' );
 
 	/** redirect to checkout ###includes/functions.php### */
 	add_action( 'woocommerce_add_to_cart_redirect', 'dskapi_add_to_cart_redirect', 9999 );
@@ -192,6 +193,31 @@ function dskapi_register_order_approval_payment_method_type() {
 		'woocommerce_blocks_payment_method_type_registration',
 		function ( Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry ) {
 			$payment_method_registry->register( new Dskapi_Payment_Gateway_Blocks() );
+		}
+	);
+}
+
+/**
+ * Register DSK cart button integration for WooCommerce Cart block.
+ *
+ * @since 1.2.2
+ * @return void
+ */
+function dskapi_register_cart_blocks_integration() {
+	if ( ! interface_exists( 'Automattic\WooCommerce\Blocks\Integrations\IntegrationInterface' ) ) {
+		return;
+	}
+
+	require_once DSKAPI_INCLUDES_DIR . '/class-dskapi-cart-blocks.php';
+
+	add_action(
+		'woocommerce_blocks_cart_block_registration',
+		static function ( $integration_registry ) {
+			if ( ! $integration_registry instanceof \Automattic\WooCommerce\Blocks\Integrations\IntegrationRegistry ) {
+				return;
+			}
+
+			$integration_registry->register( new Dskapi_Cart_Blocks_Integration() );
 		}
 	);
 }

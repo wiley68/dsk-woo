@@ -230,11 +230,11 @@ function dskapi_cart_fragments( $fragments ) {
 function dskapi_refresh_cart_button() {
 	Dskapi_Ajax::verify_nonce();
 
-	ob_start();
-	dskpayment_cart_button();
-	$html = ob_get_clean();
-
-	wp_send_json_success( array( 'html' => $html ) );
+	wp_send_json_success(
+		array(
+			'html' => dskapi_get_cart_button_html(),
+		)
+	);
 }
 
 /**
@@ -372,6 +372,64 @@ function dskapi_render_popup_banner( $reklama_id ) {
 }
 
 /**
+ * Whether cart page assets (DSK cart button scripts) should load.
+ *
+ * @since 1.2.2
+ * @return bool
+ */
+function dskapi_should_enqueue_cart_assets() {
+	return function_exists( 'is_cart' ) && is_cart();
+}
+
+/**
+ * Registers cart page CSS/JS (used by classic cart and Cart block integration).
+ *
+ * @since 1.2.2
+ * @return void
+ */
+function dskapi_register_cart_assets() {
+	static $registered = false;
+
+	if ( $registered ) {
+		return;
+	}
+
+	$css_file     = DSKAPI_PLUGIN_DIR . '/css/dskapi.css';
+	$calc_js_file = DSKAPI_PLUGIN_DIR . '/js/dskapi_calc.js';
+	$js_file      = DSKAPI_PLUGIN_DIR . '/js/dskapi_cart.js';
+
+	wp_register_style( 'dskapi_style_cart', DSKAPI_CSS_URI . '/dskapi.css', array(), filemtime( $css_file ), 'all' );
+	wp_register_script( 'dskapi_js_calc', DSKAPI_JS_URI . '/dskapi_calc.js', array(), filemtime( $calc_js_file ), true );
+	wp_localize_script( 'dskapi_js_calc', 'dskapi_ajax_vars', Dskapi_Ajax::get_script_vars() );
+	wp_register_script(
+		'dskapi_js_cart',
+		DSKAPI_JS_URI . '/dskapi_cart.js',
+		array( 'jquery', 'dskapi_js_calc' ),
+		filemtime( $js_file ),
+		true
+	);
+
+	$registered = true;
+}
+
+/**
+ * Enqueues registered cart page assets.
+ *
+ * @since 1.2.2
+ * @return void
+ */
+function dskapi_enqueue_cart_assets() {
+	if ( ! dskapi_should_enqueue_cart_assets() ) {
+		return;
+	}
+
+	dskapi_register_cart_assets();
+	wp_enqueue_style( 'dskapi_style_cart' );
+	wp_enqueue_script( 'dskapi_js_calc' );
+	wp_enqueue_script( 'dskapi_js_cart' );
+}
+
+/**
  * Enqueues frontend styles and scripts.
  *
  * Loads page-specific CSS and JavaScript files:
@@ -407,14 +465,8 @@ function dskapi_add_meta() {
 		wp_enqueue_script( 'dskapi_js_product', DSKAPI_JS_URI . '/dskapi_product.js', $calc_deps, filemtime( $js_file ), true );
 	}
 
-	if ( is_cart() ) {
-		$css_file = DSKAPI_PLUGIN_DIR . '/css/dskapi.css';
-		$js_file  = DSKAPI_PLUGIN_DIR . '/js/dskapi_cart.js';
-
-		wp_enqueue_style( 'dskapi_style_cart', DSKAPI_CSS_URI . '/dskapi.css', array(), filemtime( $css_file ), 'all' );
-		wp_enqueue_script( 'dskapi_js_calc', DSKAPI_JS_URI . '/dskapi_calc.js', array(), filemtime( $calc_js_file ), true );
-		wp_localize_script( 'dskapi_js_calc', 'dskapi_ajax_vars', Dskapi_Ajax::get_script_vars() );
-		wp_enqueue_script( 'dskapi_js_cart', DSKAPI_JS_URI . '/dskapi_cart.js', array_merge( array( 'jquery' ), $calc_deps ), filemtime( $js_file ), true );
+	if ( dskapi_should_enqueue_cart_assets() ) {
+		dskapi_enqueue_cart_assets();
 	}
 
 	if ( is_checkout() ) {
@@ -783,6 +835,36 @@ function dskapi_updateorder() {
 }
 
 /**
+ * Whether the current cart page uses the WooCommerce Cart block.
+ *
+ * @since 1.2.2
+ * @return bool
+ */
+function dskapi_is_block_cart() {
+	if ( ! function_exists( 'is_cart' ) || ! is_cart() ) {
+		return false;
+	}
+
+	if ( ! function_exists( 'has_block' ) ) {
+		return false;
+	}
+
+	return has_block( 'woocommerce/cart' );
+}
+
+/**
+ * Returns DSK cart button HTML (wrapper, popup, hidden fields).
+ *
+ * @since 1.2.2
+ * @return string
+ */
+function dskapi_get_cart_button_html() {
+	ob_start();
+	dskapi_render_cart_button_markup();
+	return (string) ob_get_clean();
+}
+
+/**
  * Displays DSK credit button on WooCommerce cart page.
  *
  * Renders a credit calculator button and popup modal that allows
@@ -810,12 +892,26 @@ function dskapi_updateorder() {
  * @return void
  */
 function dskpayment_cart_button() {
+	if ( dskapi_is_block_cart() ) {
+		return;
+	}
+
+	echo dskapi_get_cart_button_html();
+}
+
+/**
+ * Renders DSK cart button markup (classic cart, fragments, Cart block).
+ *
+ * @since 1.2.2
+ * @return void
+ */
+function dskapi_render_cart_button_markup() {
 	// Always output wrapper for WooCommerce fragments
 	echo '<div id="dskapi-cart-button-container">';
 
 	$dskapi_status = (string) get_option( 'dskapi_status' );
 	if ( $dskapi_status != 'on' ) {
-		echo '</div><!-- #dskapi-cart-button-container -->';
+		echo '</div>';
 		return;
 	}
 
@@ -827,21 +923,21 @@ function dskpayment_cart_button() {
 	$dskapi_product_id = Dskapi_Client::get_cart_product_id();
 
 	if ( $dskapi_price <= 0 ) {
-		echo '</div><!-- #dskapi-cart-button-container -->';
+		echo '</div>';
 		return;
 	}
 
 	// Determine currency settings
 	$dskapi_currency_code = get_woocommerce_currency();
 	if ( $dskapi_currency_code != 'EUR' && $dskapi_currency_code != 'BGN' ) {
-		echo '</div><!-- #dskapi-cart-button-container -->';
+		echo '</div>';
 		return;
 	}
 
 	// Get EUR settings from API
 	$paramsdskapieur = Dskapi_Client::get_eur( $dskapi_cid );
 	if ( empty( $paramsdskapieur ) ) {
-		echo '</div><!-- #dskapi-cart-button-container -->';
+		echo '</div>';
 		return;
 	}
 
@@ -874,7 +970,7 @@ function dskpayment_cart_button() {
 	$paramsdskapi = Dskapi_Client::get_product( $dskapi_price, $dskapi_product_id, $dskapi_cid );
 
 	if ( empty( $paramsdskapi ) ) {
-		echo '</div><!-- #dskapi-cart-button-container -->';
+		echo '</div>';
 		return;
 	}
 
@@ -928,7 +1024,7 @@ function dskpayment_cart_button() {
 					</tr>
 				<?php } ?>
 			</table>
-		</div><!-- .dskapi-cart-button-inner -->
+		</div>
 		<input type="hidden" id="dskapi_cart_price" value="<?php echo number_format( $dskapi_price, 2, '.', '' ); ?>" />
 		<input type="hidden" id="dskapi_cart_cid" value="<?php echo $dskapi_cid; ?>" />
 		<input type="hidden" id="dskapi_cart_product_id" value="<?php echo $dskapi_product_id; ?>" />
@@ -954,7 +1050,7 @@ function dskpayment_cart_button() {
 									</p>
 								</div>
 								<div class="dskapi_body_panel_txt3_right">
-									<select id="dskapi_cart_pogasitelni_vnoski_input" class="dskapi_txt_right" onchange="dskapi_cart_pogasitelni_vnoski_input_change();" onfocus="dskapi_cart_pogasitelni_vnoski_input_focus(this.value);">
+									<select id="dskapi_cart_pogasitelni_vnoski_input" class="dskapi_txt_right">
 										<?php for ( $i = 3; $i <= 48; $i++ ) { ?>
 											<?php if ( $dskapi_vnoski_visible_arr[ $i ] ) { ?>
 												<option value="<?php echo $i; ?>"
@@ -1015,5 +1111,5 @@ function dskpayment_cart_button() {
 		<?php
 	}
 	// Close the wrapper div for WooCommerce fragments
-	echo '</div><!-- #dskapi-cart-button-container -->';
+	echo '</div>';
 }
