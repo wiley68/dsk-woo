@@ -214,16 +214,38 @@ class Dskapi_Client {
 	}
 
 	/**
-	 * Get product calculation data.
+	 * Get product calculation and display settings (with DB cache).
 	 *
-	 * @param float       $price      Product price.
-	 * @param int         $product_id Product ID.
-	 * @param string|null $cid        Calculator ID.
-	 * @return array|null
+	 * Uses the same cache table as get_product_custom(); rows are keyed with
+	 * installments = {@see Dskapi_Cache::INSTALLMENTS_GET_PRODUCT}.
+	 *
+	 * @param string|float $price      Product price (normalized server-side).
+	 * @param int          $product_id Product ID.
+	 * @param string|null  $cid        Calculator ID.
+	 * @return array|null API response array or null if unavailable.
 	 */
 	public static function get_product( $price, $product_id, $cid = null ) {
-		$cid = $cid ?? self::get_cid();
-		return self::get(
+		$cid        = $cid ?? self::get_cid();
+		$product_id = absint( $product_id );
+		$price      = number_format( (float) $price, 2, '.', '' );
+
+		if ( $product_id <= 0 || (float) $price <= 0 ) {
+			return null;
+		}
+
+		$cache_key = Dskapi_Cache::build_cache_key(
+			$cid,
+			$product_id,
+			$price,
+			Dskapi_Cache::INSTALLMENTS_GET_PRODUCT
+		);
+
+		$cached = Dskapi_Cache::get_fresh( $cache_key );
+		if ( null !== $cached ) {
+			return $cached;
+		}
+
+		$response = self::get(
 			'/function/getproduct.php',
 			array(
 				'cid'        => $cid,
@@ -231,6 +253,25 @@ class Dskapi_Client {
 				'product_id' => $product_id,
 			)
 		);
+
+		if ( self::is_valid_product_response( $response ) ) {
+			Dskapi_Cache::set(
+				$cache_key,
+				$cid,
+				$product_id,
+				$price,
+				Dskapi_Cache::INSTALLMENTS_GET_PRODUCT,
+				$response
+			);
+			return $response;
+		}
+
+		$stale = Dskapi_Cache::get_stale( $cache_key );
+		if ( null !== $stale ) {
+			return $stale;
+		}
+
+		return null;
 	}
 
 	/**
@@ -280,6 +321,20 @@ class Dskapi_Client {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Whether getproduct response contains required fields.
+	 *
+	 * @param mixed $response Decoded API response.
+	 * @return bool
+	 */
+	public static function is_valid_product_response( $response ) {
+		return is_array( $response )
+			&& array_key_exists( 'dsk_status', $response )
+			&& array_key_exists( 'dsk_options', $response )
+			&& array_key_exists( 'dsk_is_visible', $response )
+			&& array_key_exists( 'dsk_vnoski_default', $response );
 	}
 
 	/**

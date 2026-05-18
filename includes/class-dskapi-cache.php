@@ -38,6 +38,13 @@ class Dskapi_Cache {
 	const TTL_STALE_MAX = 21600;
 
 	/**
+	 * Installment sentinel for getproduct.php cache rows (not used by getproductcustom).
+	 *
+	 * @var int
+	 */
+	const INSTALLMENTS_GET_PRODUCT = 0;
+
+	/**
 	 * Get full table name including prefix.
 	 *
 	 * @return string

@@ -48,7 +48,7 @@ function dskapi_load_class_plugin() {
  *
  * Creates the following tables:
  * - {prefix}dskpayment_orders: Stores DSK payment order statuses
- * - {prefix}dskapi_calc_cache: Cached getproductcustom API responses
+ * - {prefix}dskapi_calc_cache: Cached getproduct / getproductcustom API responses
  *
  * @since 1.2.0
  * @return void
