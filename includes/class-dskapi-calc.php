@@ -48,7 +48,7 @@ class Dskapi_Calc {
 		$installments = isset( $_POST['dskapi_vnoski'] ) ? absint( $_POST['dskapi_vnoski'] ) : 0;
 		$price_raw    = isset( $_POST['price'] ) ? wp_unslash( $_POST['price'] ) : '';
 
-		if ( $product_id <= 0 || $installments < 3 || $installments > 48 ) {
+		if ( $installments < 3 || $installments > 48 ) {
 			self::send_error_response();
 		}
 

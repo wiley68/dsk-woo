@@ -874,6 +874,7 @@ function dskpayment_cart_button() {
 	$paramsdskapi = Dskapi_Client::get_product( $dskapi_price, $dskapi_product_id, $dskapi_cid );
 
 	if ( empty( $paramsdskapi ) ) {
+		echo '</div><!-- #dskapi-cart-button-container -->';
 		return;
 	}
 

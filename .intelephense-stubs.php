@@ -344,12 +344,12 @@ namespace {
     /**
      * Verifies the AJAX referer nonce.
      *
-     * @param int|string $action    Nonce action.
-     * @param false|int  $stop      Whether to die on failure. Default true.
-     * @param string     $query_arg Request parameter name. Default false (uses '_ajax_nonce' or 'nonce').
+     * @param int|string       $action    Nonce action.
+     * @param false|string     $query_arg Request parameter name. Default false.
+     * @param bool             $stop      Whether to die on failure. Default true.
      * @return int|false 1 or 2 on success, false on failure.
      */
-    function check_ajax_referer($action = -1, $stop = true, $query_arg = false)
+    function check_ajax_referer($action = -1, $query_arg = false, $stop = true)
     {
         return 1;
     }

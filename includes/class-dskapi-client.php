@@ -142,7 +142,8 @@ class Dskapi_Client {
 		$error     = curl_error( $ch );
 		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
 
-		curl_close( $ch );
+		// CurlHandle is closed automatically when $ch goes out of scope (PHP 8+).
+		unset( $ch );
 
 		// Log errors if WP_DEBUG is enabled
 		if ( $error && WP_DEBUG ) {
@@ -220,7 +221,7 @@ class Dskapi_Client {
 	 * installments = {@see Dskapi_Cache::INSTALLMENTS_GET_PRODUCT}.
 	 *
 	 * @param string|float $price      Product price (normalized server-side).
-	 * @param int          $product_id Product ID.
+	 * @param int          $product_id Product ID (0 = cart total / mixed cart).
 	 * @param string|null  $cid        Calculator ID.
 	 * @return array|null API response array or null if unavailable.
 	 */
@@ -229,7 +230,7 @@ class Dskapi_Client {
 		$product_id = absint( $product_id );
 		$price      = number_format( (float) $price, 2, '.', '' );
 
-		if ( $product_id <= 0 || (float) $price <= 0 ) {
+		if ( (float) $price <= 0 ) {
 			return null;
 		}
 
@@ -278,7 +279,7 @@ class Dskapi_Client {
 	 * Get custom installment calculation (with DB cache).
 	 *
 	 * @param string|float $price        Product price (normalized server-side).
-	 * @param int          $product_id   Product ID.
+	 * @param int          $product_id   Product ID (0 = cart total / mixed cart).
 	 * @param int          $installments Installment count (3–48).
 	 * @param string|null  $cid          Calculator ID.
 	 * @return array|null API response array or null if unavailable.
@@ -289,7 +290,7 @@ class Dskapi_Client {
 		$installments = absint( $installments );
 		$price        = number_format( (float) $price, 2, '.', '' );
 
-		if ( $product_id <= 0 || $installments < 3 || $installments > 48 || (float) $price <= 0 ) {
+		if ( $installments < 3 || $installments > 48 || (float) $price <= 0 ) {
 			return null;
 		}
 
@@ -411,9 +412,11 @@ class Dskapi_Client {
 
 	/**
 	 * Get product ID from cart items.
-	 * Returns product ID if cart contains only one unique product, otherwise returns 0.
 	 *
-	 * @return int Product ID or 0 if multiple products or empty cart.
+	 * Returns the product ID when the cart has exactly one unique product;
+	 * returns 0 for mixed carts (use with cart total in get_product / get_product_custom).
+	 *
+	 * @return int Product ID, or 0 for multiple products or empty cart.
 	 */
 	public static function get_cart_product_id() {
 		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
