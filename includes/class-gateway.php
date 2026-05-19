@@ -690,10 +690,7 @@ class Dskapi_Payment_Gateway extends WC_Payment_Gateway {
 				$dskapi_output .= $dskapi_encrypted;
 			}
 
-			// Free key resource (PHP < 8.0)
-			if ( version_compare( PHP_VERSION, '8.0.0', '<' ) ) {
-				openssl_free_key( $dskapi_publicKey );
-			}
+			unset( $dskapi_publicKey );
 
 			// Base64 encode encrypted data
 			$dskapi_output64 = base64_encode( $dskapi_output );
